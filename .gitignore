@@ -8,6 +8,9 @@ output_files/
 hw/db/
 hw/incremental_db/
 hw/output_files/
+hw/ip/*_gen/
+hw/ip/*.sopcinfo
+hw/c5_pin_model_dump.txt
 
 ~hw/scripts/*.cdf
 
