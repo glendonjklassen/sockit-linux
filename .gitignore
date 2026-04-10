@@ -5,6 +5,9 @@
 db/
 incremental_db/
 output_files/
+hw/db/
+hw/incremental_db/
+hw/output_files/
 
 ~hw/scripts/*.cdf
 
@@ -18,12 +21,15 @@ output_files/
 *.summary
 *.sld
 *.txt.bak
+*.qws
 
 *.qarlog
 *.qar
 greybox_tmp/
 hc_output/
 .qsys_edit/
+
+.codex
 
 *_sim/
 *_tb/
