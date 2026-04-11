@@ -4,6 +4,7 @@
 
 sw/hps-image/build/
 sw/hps-image/output/
+sw/hps-image/output-*/
 sw/hps-image/dl/
 sw/hps-image/work/
 sw/hps-image/.cache/

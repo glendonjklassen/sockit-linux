@@ -1,0 +1,48 @@
+# Starting point for the separate "own kernel + DTB" SoCKit track.
+#
+# This is intentionally a fragment, not a final defconfig. It captures the
+# likely Buildroot direction for a kernel-owned image path while we sort out the
+# correct SoCKit DTS and boot-partition contents.
+
+BR2_arm=y
+BR2_cortex_a9=y
+BR2_ARM_ENABLE_NEON=y
+BR2_ARM_ENABLE_VFP=y
+BR2_ARM_FPU_NEON=y
+
+# Keep the host-development model from the rootfs-first track.
+BR2_TARGET_GENERIC_HOSTNAME="sockit"
+BR2_TARGET_GENERIC_GETTY=y
+BR2_TARGET_GENERIC_GETTY_PORT="ttyS0"
+BR2_TARGET_GENERIC_GETTY_BAUDRATE_115200=y
+BR2_TARGET_ENABLE_ROOT_LOGIN=y
+BR2_SYSTEM_DHCP="eth0"
+
+# Buildroot should own the runtime stack in this track.
+BR2_LINUX_KERNEL=y
+BR2_LINUX_KERNEL_CUSTOM_GIT=y
+BR2_LINUX_KERNEL_CUSTOM_REPO_URL="https://github.com/altera-opensource/linux-socfpga.git"
+BR2_LINUX_KERNEL_CUSTOM_REPO_VERSION="rel_socfpga-5.11_21.06.01_pr"
+BR2_LINUX_KERNEL_DEFCONFIG="socfpga"
+BR2_LINUX_KERNEL_DTS_SUPPORT=y
+
+# DTS name is intentionally not pinned yet.
+# We need to confirm the right SoCKit DTS source before turning this into a
+# final defconfig.
+
+BR2_TARGET_ROOTFS_EXT2=y
+BR2_TARGET_ROOTFS_EXT2_4=y
+BR2_TARGET_ROOTFS_EXT2_SIZE="256M"
+BR2_TARGET_ROOTFS_TAR=y
+
+BR2_PACKAGE_OPENSSH=y
+BR2_PACKAGE_OPENSSH_SERVER=y
+BR2_PACKAGE_STRACE=y
+BR2_PACKAGE_IPROUTE2=y
+BR2_PACKAGE_ETHTOOL=y
+BR2_PACKAGE_BINUTILS=y
+BR2_PACKAGE_BINUTILS_TARGET=y
+BR2_PACKAGE_HOST_DOSFSTOOLS=y
+BR2_PACKAGE_HOST_GENIMAGE=y
+BR2_PACKAGE_HOST_MTOOLS=y
+BR2_PACKAGE_HOST_ENVIRONMENT_SETUP=y

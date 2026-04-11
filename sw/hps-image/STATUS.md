@@ -25,6 +25,8 @@ Create a reproducible HPS image workspace for the SoCKit board and document the
 - HPS login: `root` with no password on the known-good image
 - Current kernel seen on console: Linux `3.12.0-00307-g507abb4-dirty`
 - Current userspace appears vendor/demo oriented and dated
+- Current rootfs-first image assembly depends on an external Terasic Rev. D
+  reference image that is not stored in this repo
 
 ## Why We Are Starting This Workspace
 
@@ -32,16 +34,23 @@ The old SD image is good enough as a fallback but poor for active development.
 Even a tiny HPS-to-FPGA bridge test ran into friction because the image lacks:
 
 - package management
-- a compiler
 - a simple `devmem`-style tool
 - a modern, maintainable software base
+- an easy way to deploy host-built test binaries cleanly
 
 ## Immediate Next Steps
 
-1. Decide whether to start with Buildroot or another lightweight image path.
-2. Create a reproducible fetch/build script for the selected approach.
-3. Capture the minimum package set required for HPS/FPGA iteration.
-4. Decide which current boot components to reuse for the first custom image.
+1. Finish the Buildroot rootfs-first workflow and assemble a bootable SD image.
+2. Export the matching Buildroot SDK for host-side HPS cross-compilation.
+3. Boot the first custom image on the SoCKit and verify serial login and DHCP.
+4. Deploy and run a small host-built HPS/FPGA bridge test binary.
+
+## Parallel Workstream
+
+- A separate kernel / DTB ownership track now exists under
+  `sw/hps-image/full-stack/`.
+- That track is for replacing the vendor `zImage` and `socfpga.dtb` while
+  keeping the current rootfs-first path available as a fallback.
 
 ## Newly Captured Boot Facts
 
@@ -64,8 +73,9 @@ Even a tiny HPS-to-FPGA bridge test ran into friction because the image lacks:
 We consider the first milestone done when we can:
 
 - build the image reproducibly from this repo workflow
+- export a matching host SDK/toolchain reproducibly from the same workflow
 - boot it on the SoCKit
 - log in over serial
 - reach the network
-- compile or run a small HPS-side bridge test
+- deploy and run a small host-built HPS-side bridge test
 - document rebuild and flash steps for future sessions

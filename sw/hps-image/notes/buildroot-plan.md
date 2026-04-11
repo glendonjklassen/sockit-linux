@@ -56,9 +56,6 @@ The first development-oriented image should prioritize usefulness over purity.
 
 Minimum package goals:
 
-- `gcc`
-- `g++` if Buildroot package choices make it cheap to include
-- `make`
 - `binutils`
 - `gdbserver` or equivalent debugging support
 - `openssh`
@@ -67,6 +64,13 @@ Minimum package goals:
 - basic networking tools
 - `scp`/`sftp` path for moving test binaries
 - enough shell utilities to inspect memory maps, mounts, and boot files
+
+Important nuance:
+
+- target-side native compilation is not the preferred workflow
+- host-side cross-compilation plus `scp`/`ssh` is the intended development path
+- we should export a Buildroot SDK/toolchain for the dev box rather than try to
+  turn the SoCKit into a self-hosted build machine
 
 Nice-to-have packages:
 
@@ -105,6 +109,37 @@ A helper that:
 2. unpacks it into `sw/hps-image/buildroot-src/`
 3. points Buildroot at local `dl/` and `output/` directories
 4. applies the repo's checked-in config
+
+This workspace now has the first two helper scripts:
+
+- `scripts/fetch-buildroot.sh`
+- `scripts/prepare-buildroot.sh`
+
+## Practical Reference We Can Reuse
+
+Buildroot `2025.02.12` includes:
+
+- `configs/terasic_de10nano_cyclone5_defconfig`
+- `board/terasic/de10nano_cyclone5/`
+
+This is useful because it proves modern Buildroot already knows how to build
+for a closely related Cyclone V SoC board. It also uses a disk layout with:
+
+- a raw `0xa2` partition
+- a FAT boot partition
+- a Linux rootfs partition
+
+That is close to the known-good SoCKit image we inspected.
+
+## Current Working Recommendation
+
+Use the DE10-Nano Cyclone V Buildroot support as a reference, not as-is.
+
+That means:
+
+- borrow its SoCFPGA integration ideas
+- keep SoCKit-specific files in `sw/hps-image/board/sockit_cyclone5/`
+- create a SoCKit-specific config once we settle the kernel/DTB reuse decision
 
 ## Remaining Open Questions
 

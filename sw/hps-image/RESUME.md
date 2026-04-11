@@ -23,6 +23,8 @@ modernization and reproducibility.
 - Prefer incremental replacement over replacing the whole SoCFPGA boot chain in
   one move.
 - Keep generated artifacts out of git.
+- Do not add Terasic-distributed boot images or "CD-ROM" contents to this MIT
+  repo; document them as external prerequisites instead.
 - Record every discovered board-specific assumption in `notes/`.
 
 ## Good Next Actions
@@ -33,6 +35,8 @@ modernization and reproducibility.
 - script the image build so it is restartable
 - identify which current boot components can remain untouched for the first
   custom-image attempt
+- if the old kernel becomes the bottleneck, switch to the separate
+  `sw/hps-image/full-stack/` workstream for owning kernel + DTB
 
 ## If You Need To Rebuild Context
 
