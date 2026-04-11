@@ -14,8 +14,8 @@ The first FPGA image in this repo is a simple VHDL learner exercise for the SoCK
 From the repo root:
 
 ```bash
-quartus_sh --flow compile hw/SoCKit-IDS
-quartus_pgm -m jtag -c 1 -o "p;hw/output_files/SoCKit-IDS.sof"
+./hw/scripts/compile_hw.sh
+./hw/scripts/program_hw.sh 1
 ```
 
 If the board and cable are visible to Quartus:
@@ -90,8 +90,8 @@ Generate the bridge IP and compile from the repo root:
 
 ```bash
 ./hw/scripts/generate_bridge_ledkey_ip.sh
-quartus_sh --flow compile hw/SoCKit-IDS
-quartus_pgm -m jtag -c "CV SoCKit [1-6]" -o "p;hw/output_files/SoCKit-IDS.sof@1"
+./hw/scripts/compile_hw.sh
+./hw/scripts/program_hw.sh "CV SoCKit [1-6]" 1
 ```
 
 Then, on the HPS Linux side, build and run:

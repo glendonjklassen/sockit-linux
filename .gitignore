@@ -2,6 +2,16 @@
 *.wic
 *.img
 
+sw/hps-image/build/
+sw/hps-image/output/
+sw/hps-image/dl/
+sw/hps-image/work/
+sw/hps-image/.cache/
+sw/hps-image/buildroot-src/
+sw/hps-image/*.img
+sw/hps-image/*.wic
+sw/hps-image/*.tar.gz
+
 db/
 incremental_db/
 output_files/
