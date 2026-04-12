@@ -34,8 +34,11 @@ Create a reproducible HPS image workspace for the SoCKit board and document the
 - A glibc-based Buildroot rootfs still panics under the vendor kernel during
   `/sbin/init`, so the conservative rootfs-first track now targets musl
 - The separate kernel-owned track has produced a first assembled
-  `sdcard-kernel-owned.img`, but it still uses a provisional DE0-Nano-derived
-  DTB and has not yet been boot-tested on hardware
+  `sdcard-kernel-owned.img`
+- That first kernel-owned image has now been boot-tested successfully on
+  hardware: Linux `5.11.0`, serial login, rootfs mount, and DHCP all work
+- The kernel-owned image still uses a provisional DE0-Nano-derived DTB, and
+  the running model string reports `Terasic DE-0(Atlas)` instead of SoCKit
 
 ## Why We Are Starting This Workspace
 
@@ -53,9 +56,9 @@ Even a tiny HPS-to-FPGA bridge test ran into friction because the image lacks:
    filesystem, and deployment flow over the network.
 2. Deploy and run a small host-built HPS/FPGA bridge test binary on that
    working image.
-3. Flash and boot-test `output-kernel-owned/images/sdcard-kernel-owned.img`.
-4. Replace the provisional DE0-Nano DTB in the kernel-owned track with a
+3. Replace the provisional DE0-Nano DTB in the kernel-owned track with a
    SoCKit-specific DTS/DTB path.
+4. Rebuild and re-boot-test the kernel-owned image after the DTS swap.
 
 ## Parallel Workstream
 

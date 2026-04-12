@@ -15,8 +15,10 @@ This file is for fast handoff.
 We validated the FPGA side and recovered a working HPS boot by returning to a
 known-good SD image. From there we built and booted a Buildroot musl-based
 rootfs-first image successfully, and in parallel assembled a first
-kernel-owned SD image that still needs hardware bring-up. The next workstream
-is not FPGA debugging; it is HPS image modernization and reproducibility.
+kernel-owned SD image. That kernel-owned image has also now booted
+successfully, but it is still carrying a provisional DE0-Nano-derived DTB.
+The next workstream is not FPGA debugging; it is HPS image modernization and
+reproducibility.
 
 ## Constraints
 
@@ -33,10 +35,9 @@ is not FPGA debugging; it is HPS image modernization and reproducibility.
 
 - use the working musl rootfs-first image as the day-to-day development image
 - deploy and run a host-built HPS/FPGA bridge test binary on that image
-- flash and serial-test the first
-  `sw/hps-image/output-kernel-owned/images/sdcard-kernel-owned.img`
 - replace the provisional DE0-Nano DTB in `sw/hps-image/full-stack/` with a
   SoCKit-specific DTS or DTS adaptation
+- rebuild and re-boot-test the kernel-owned image after the DTS update
 - keep generated artifacts out of git while preserving the checked-in workflow
 
 ## If You Need To Rebuild Context
@@ -49,7 +50,10 @@ Useful facts already established:
 - the current vendor image is too minimal for comfortable development
 - the Buildroot musl rootfs-first image now boots to a `root` shell
 - that working Buildroot image obtained DHCP on `eth0`
-- the first kernel-owned image has been assembled but not boot-tested yet
+- the first kernel-owned image now boots Linux 5.11 to a `root` shell
+- that kernel-owned image also obtained DHCP on `eth0`
+- the remaining known correctness gap is the provisional DT model /
+  board-description mismatch
 
 ## Update Discipline
 
