@@ -115,9 +115,11 @@ means a fresh clone also needs a local copy of the Rev. D boot image, such as
 `SoCKit_SD_revD.img`, obtained from Terasic's distribution outside this MIT
 repo.
 
-The repo recipe owns the Buildroot rootfs and SDK generation. It does not yet
-fully own the boot image contents in the FAT boot partition or the tiny raw
-boot partition.
+The repo recipe owns the Buildroot rootfs and SDK generation. While this
+rootfs-first path still reuses the old vendor `3.12.0` kernel, the checked-in
+Buildroot defconfig is intentionally musl-based so the userspace can boot on
+that older runtime. It does not yet fully own the boot image contents in the
+FAT boot partition or the tiny raw boot partition.
 
 ## First Concrete Work Items
 
@@ -148,7 +150,7 @@ That command:
 
 - syncs the output tree from the checked-in SoCKit defconfig
 - builds the Buildroot root filesystem and host toolchain
-- exports a relocatable SDK tarball for host-side cross-compilation
+- exports a relocatable musl-based SDK tarball for host-side cross-compilation
 - assembles an SD image by reusing the known-good SoCKit boot partitions and
   replacing only the Linux root filesystem partition
 
@@ -180,7 +182,10 @@ make -C sw/hps-image/buildroot-src \
 The exported SDK lands in `sw/hps-image/output-rootfs-first/images/`. After
 extracting it on the dev box, run `./relocate-sdk.sh` and then
 `. ./environment-setup` in the extracted SDK directory before building your own
-HPS-side software.
+HPS-side software. Because the rootfs-first path still rides on the vendor
+kernel, this SDK currently targets musl for maximum runtime compatibility; the
+separate `full-stack/` workstream is where we can later move to a newer
+kernel-owned stack.
 
 There is also an offline SD-image inspection helper at
 [scripts/inventory-sd-image.sh](/home/gjklassen/code/sockit-ids/sw/hps-image/scripts/inventory-sd-image.sh)

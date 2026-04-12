@@ -22,11 +22,20 @@ Create a reproducible HPS image workspace for the SoCKit board and document the
 - Board: SoCKit / Cyclone V SoC Development Kit
 - Host JTAG cable: `CV SoCKit [1-6]`
 - Host serial device: `/dev/ttyUSB0`
-- HPS login: `root` with no password on the known-good image
+- HPS login: `root` with no password on both the known-good vendor image and
+  the current Buildroot musl image
 - Current kernel seen on console: Linux `3.12.0-00307-g507abb4-dirty`
-- Current userspace appears vendor/demo oriented and dated
+- The conservative rootfs-first Buildroot image now boots successfully on the
+  board while reusing the vendor boot chain
+- The working Buildroot image brings up `eth0` via DHCP and has been observed
+  at `192.168.2.240`
 - Current rootfs-first image assembly depends on an external Terasic Rev. D
   reference image that is not stored in this repo
+- A glibc-based Buildroot rootfs still panics under the vendor kernel during
+  `/sbin/init`, so the conservative rootfs-first track now targets musl
+- The separate kernel-owned track has produced a first assembled
+  `sdcard-kernel-owned.img`, but it still uses a provisional DE0-Nano-derived
+  DTB and has not yet been boot-tested on hardware
 
 ## Why We Are Starting This Workspace
 
@@ -40,10 +49,13 @@ Even a tiny HPS-to-FPGA bridge test ran into friction because the image lacks:
 
 ## Immediate Next Steps
 
-1. Finish the Buildroot rootfs-first workflow and assemble a bootable SD image.
-2. Export the matching Buildroot SDK for host-side HPS cross-compilation.
-3. Boot the first custom image on the SoCKit and verify serial login and DHCP.
-4. Deploy and run a small host-built HPS/FPGA bridge test binary.
+1. Log into the working musl rootfs-first image and verify the expected shell,
+   filesystem, and deployment flow over the network.
+2. Deploy and run a small host-built HPS/FPGA bridge test binary on that
+   working image.
+3. Flash and boot-test `output-kernel-owned/images/sdcard-kernel-owned.img`.
+4. Replace the provisional DE0-Nano DTB in the kernel-owned track with a
+   SoCKit-specific DTS/DTB path.
 
 ## Parallel Workstream
 
@@ -51,6 +63,8 @@ Even a tiny HPS-to-FPGA bridge test ran into friction because the image lacks:
   `sw/hps-image/full-stack/`.
 - That track is for replacing the vendor `zImage` and `socfpga.dtb` while
   keeping the current rootfs-first path available as a fallback.
+- Its first output image is
+  `sw/hps-image/output-kernel-owned/images/sdcard-kernel-owned.img`.
 
 ## Newly Captured Boot Facts
 

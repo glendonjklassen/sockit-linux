@@ -13,8 +13,10 @@ This file is for fast handoff.
 ## What We Were Doing
 
 We validated the FPGA side and recovered a working HPS boot by returning to a
-known-good SD image. The next workstream is not FPGA debugging; it is HPS image
-modernization and reproducibility.
+known-good SD image. From there we built and booted a Buildroot musl-based
+rootfs-first image successfully, and in parallel assembled a first
+kernel-owned SD image that still needs hardware bring-up. The next workstream
+is not FPGA debugging; it is HPS image modernization and reproducibility.
 
 ## Constraints
 
@@ -29,14 +31,13 @@ modernization and reproducibility.
 
 ## Good Next Actions
 
-- dump the current partition table and file layout from the known-good SD card
-- choose and pin a Buildroot version
-- define the minimum package set for the new image
-- script the image build so it is restartable
-- identify which current boot components can remain untouched for the first
-  custom-image attempt
-- if the old kernel becomes the bottleneck, switch to the separate
-  `sw/hps-image/full-stack/` workstream for owning kernel + DTB
+- use the working musl rootfs-first image as the day-to-day development image
+- deploy and run a host-built HPS/FPGA bridge test binary on that image
+- flash and serial-test the first
+  `sw/hps-image/output-kernel-owned/images/sdcard-kernel-owned.img`
+- replace the provisional DE0-Nano DTB in `sw/hps-image/full-stack/` with a
+  SoCKit-specific DTS or DTS adaptation
+- keep generated artifacts out of git while preserving the checked-in workflow
 
 ## If You Need To Rebuild Context
 
@@ -46,6 +47,9 @@ Useful facts already established:
 - JTAG cable is `CV SoCKit [1-6]`
 - the current vendor image boots reliably
 - the current vendor image is too minimal for comfortable development
+- the Buildroot musl rootfs-first image now boots to a `root` shell
+- that working Buildroot image obtained DHCP on `eth0`
+- the first kernel-owned image has been assembled but not boot-tested yet
 
 ## Update Discipline
 

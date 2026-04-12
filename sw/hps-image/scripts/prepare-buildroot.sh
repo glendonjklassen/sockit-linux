@@ -17,6 +17,7 @@ Prepare a local Buildroot output tree for the SoCKit rootfs-first workflow.
 
 Options:
   --fresh            re-seed the output tree from the checked-in defconfig
+  --defconfig PATH   override the checked-in defconfig to seed from
   --output-dir PATH  override the Buildroot O= directory
 EOF
 }
@@ -26,6 +27,10 @@ while [[ $# -gt 0 ]]; do
         --fresh)
             fresh_config=1
             shift
+            ;;
+        --defconfig)
+            defconfig="$2"
+            shift 2
             ;;
         --output-dir)
             out_dir="$2"
@@ -46,6 +51,11 @@ done
 if [[ ! -d "$src_dir" ]]; then
     echo "Missing Buildroot source in $src_dir" >&2
     echo "Run sw/hps-image/scripts/fetch-buildroot.sh first." >&2
+    exit 1
+fi
+
+if [[ ! -f "$defconfig" ]]; then
+    echo "Missing defconfig: $defconfig" >&2
     exit 1
 fi
 
@@ -74,6 +84,9 @@ Output tree:
 
 Config sync:
   $sync_mode
+
+Defconfig:
+  $defconfig
 
 Next steps:
   1. Build the rootfs:

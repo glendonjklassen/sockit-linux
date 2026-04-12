@@ -5,7 +5,8 @@ SoCKit software stack than the current rootfs-first path.
 
 The rootfs-first path under `sw/hps-image/` keeps the vendor kernel, DTB, and
 early boot pieces as long as possible. That is useful for low-risk bring-up,
-but it leaves us tied to an old runtime.
+but it leaves us tied to an old runtime, which is why that conservative path
+currently uses a musl userspace for compatibility.
 
 This track exists so we can work toward:
 
@@ -26,6 +27,35 @@ The near-term target is not "replace everything at once." It is:
 
 That would let us own the runtime stack without immediately turning this into a
 full early-boot bring-up project.
+
+## Current Workflow Stub
+
+This track now has its own checked-in defconfig and build helpers:
+
+- `configs/sockit_cyclone5_kernel_owned_defconfig`
+- `scripts/build-kernel-owned-image.sh`
+- `scripts/assemble-kernel-owned-image.sh`
+
+The current assembly approach is intentionally conservative:
+
+- preserve partition 3 from the Terasic Rev. D reference image
+- generate a new FAT boot partition containing our `zImage`
+- copy one Buildroot-generated DTB into that FAT partition as `socfpga.dtb`
+- replace partition 2 with the Buildroot root filesystem
+
+That gives us a concrete parallel track for kernel / DTB ownership without
+touching the earliest boot stage yet.
+
+## Current DTS Assumption
+
+The current defconfig uses the upstream SoCFPGA DE0-Nano DTS as a provisional
+stand-in:
+
+- `socfpga_cyclone5_de0_nano_soc`
+
+That is a build-and-bring-up starting point, not a claim that the DTB is the
+right final SoCKit description. One of the next jobs in this track is to swap
+that out for a SoCKit-specific DTS once we identify or create the correct one.
 
 ## Why This Is Separate
 
