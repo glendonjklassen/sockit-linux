@@ -201,12 +201,13 @@ Preserved raw boot partition from:
 
 Generated FAT boot payload with:
   kernel -> zImage
-  dtb    -> socfpga.dtb
+  dtb    -> socfpga.dtb (from $(basename "$dtb_image"))
 
 Manifest:
   $manifest_path
 
 Track note:
-  This workflow still uses a provisional SoCFPGA DTB source until we replace
-  the DE0-Nano reference DTS with a SoCKit-specific one.
+  This workflow now targets the native SoCKit DTB when available.
+  The remaining inherited piece is the raw boot partition preserved from the
+  Terasic reference image.
 MSG

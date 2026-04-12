@@ -37,8 +37,14 @@ Create a reproducible HPS image workspace for the SoCKit board and document the
   `sdcard-kernel-owned.img`
 - That first kernel-owned image has now been boot-tested successfully on
   hardware: Linux `5.11.0`, serial login, rootfs mount, and DHCP all work
-- The kernel-owned image still uses a provisional DE0-Nano-derived DTB, and
-  the running model string reports `Terasic DE-0(Atlas)` instead of SoCKit
+- The first kernel-owned boot used a provisional DE0-Nano-derived DTB, and the
+  running model string reported `Terasic DE-0(Atlas)` instead of SoCKit
+- The SoCFPGA kernel tree also contains `socfpga_cyclone5_sockit.dts`, and
+  a fresh kernel-owned image has now been rebuilt with that DTS under
+  `sw/hps-image/output-kernel-owned-sockit/`
+- That rebuilt SoCKit-DTS image has now been boot-tested successfully on
+  hardware: it reaches a root shell, mounts the Buildroot rootfs, starts
+  `sshd`, and brings `eth0` up on DHCP at `192.168.2.245`
 
 ## Why We Are Starting This Workspace
 
@@ -56,9 +62,11 @@ Even a tiny HPS-to-FPGA bridge test ran into friction because the image lacks:
    filesystem, and deployment flow over the network.
 2. Deploy and run a small host-built HPS/FPGA bridge test binary on that
    working image.
-3. Replace the provisional DE0-Nano DTB in the kernel-owned track with a
-   SoCKit-specific DTS/DTB path.
-4. Rebuild and re-boot-test the kernel-owned image after the DTS swap.
+3. Capture and record the running SoCKit model string explicitly from the new
+   kernel-owned image, since the serial console made post-boot command output
+   noisy during the first proof boot.
+4. Verify any remaining board-specific peripherals and then continue toward
+   replacing the preserved raw boot partition.
 
 ## Parallel Workstream
 

@@ -1,6 +1,6 @@
 # Kernel / DTB Ownership Plan
 
-Status: initial separate-track plan
+Status: active separate-track plan
 
 This note covers the path for owning `zImage` and `socfpga.dtb` while still
 reusing the current SPL / U-Boot path initially.
@@ -39,28 +39,45 @@ Recommended order:
 4. keep rootfs generation in Buildroot
 5. revisit the raw boot partition only after kernel / DTB ownership is stable
 
+## What We Know Now
+
+- the SoCFPGA kernel tree we are already using contains a native SoCKit DTS:
+  `socfpga_cyclone5_sockit.dts`
+- our first kernel-owned image booted successfully even with the provisional
+  DE0-Nano-derived DTB
+- the current rebuild in this track now targets the native SoCKit DTS instead
+  of the DE0-Nano placeholder
+- that rebuilt SoCKit-DTS image now boots successfully to a shell on hardware
+  with the owned kernel/rootfs path
+- the raw `0xa2` partition in the Terasic reference image contains ARM boot
+  code and embedded `U-Boot SPL` / `U-Boot` strings, so it is very likely the
+  early-boot payload we still inherit
+
 ## Most Likely Technical Work Items
 
 - choose a kernel baseline that still supports Cyclone V SoCFPGA cleanly
-- identify whether a SoCKit DTS already exists upstream or in vendor trees
-- create or adapt a SoCKit DTS if one does not already exist
+- switch the workflow to the native `socfpga_cyclone5_sockit.dts`
+- verify whether any SoCKit-specific fixes are still needed on top of that DTS
 - verify UART, MMC, Ethernet, and HPS bridge nodes in the DTB
 - wire kernel + DTB artifacts into a generated FAT image
 - verify U-Boot can still boot them with the current simple flow
 
 ## Main Unknowns
 
-- whether an upstream or vendor SoCKit DTS already exists and is usable
 - whether the vendor U-Boot expects any kernel-image quirks from the 2014 flow
 - whether bridge-related nodes need board-specific DT changes beyond a nearby
   Cyclone V reference board
+- what exact format and contents the raw `0xa2` partition expects when we
+  finally replace it
 
 ## Working Assumption
 
-The best starting point is still the Buildroot DE10-Nano Cyclone V support:
+The DE10-Nano Buildroot support was a good technical reference for first
+bring-up, but it is no longer the intended DT direction.
 
-- it already demonstrates a modern SoCFPGA kernel build path
-- it already emits `zImage` and a DTB
-- it uses a similar SD-image structure
+The current assumption is:
 
-We should treat it as a technical reference, not as a drop-in SoCKit config.
+- use the same modern SoCFPGA kernel baseline
+- use the kernel tree's native `socfpga_cyclone5_sockit.dts`
+- preserve the raw `0xa2` partition until the SoCKit-DTS image is stable
+- only then start replacing the early-boot partition

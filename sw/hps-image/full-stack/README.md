@@ -48,14 +48,22 @@ touching the earliest boot stage yet.
 
 ## Current DTS Assumption
 
-The current defconfig uses the upstream SoCFPGA DE0-Nano DTS as a provisional
-stand-in:
+The first successful boot of this track used the upstream SoCFPGA DE0-Nano DTS
+as a provisional stand-in, which is why the running model string reported
+`Terasic DE-0(Atlas)`.
 
-- `socfpga_cyclone5_de0_nano_soc`
+The kernel tree we are using already contains a SoCKit-specific DTS:
 
-That is a build-and-bring-up starting point, not a claim that the DTB is the
-right final SoCKit description. One of the next jobs in this track is to swap
-that out for a SoCKit-specific DTS once we identify or create the correct one.
+- `socfpga_cyclone5_sockit`
+
+The checked-in full-stack defconfig now targets that SoCKit DTS, and the
+current rebuild output under `sw/hps-image/output-kernel-owned-sockit/` uses
+the native SoCKit DTB. Keep the older DE0-Nano-based image only as a bring-up
+fallback.
+
+That SoCKit-DTS image has now also been boot-tested successfully on hardware:
+it reaches the Buildroot shell, mounts the owned root filesystem, starts
+networking and `sshd`, and is suitable as the new working ownership baseline.
 
 ## Why This Is Separate
 
