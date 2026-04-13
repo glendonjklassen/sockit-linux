@@ -52,6 +52,35 @@ Recommended order:
 - the raw `0xa2` partition in the Terasic reference image contains ARM boot
   code and embedded `U-Boot SPL` / `U-Boot` strings, so it is very likely the
   early-boot payload we still inherit
+- the local Buildroot tree includes a nearby Cyclone V reference board,
+  `terasic_de10nano_cyclone5`, that already generates a raw `0xa2` partition,
+  FAT boot partition, Linux rootfs partition, and complete `sdcard.img`
+- that nearby reference uses Buildroot-managed `barebox` plus an auxiliary
+  `socfpga-xload-2` image rather than preserving a vendor image sector-for-
+  sector
+
+## Early-Boot Ownership Direction
+
+The next meaningful ownership step is no longer "get our kernel to boot." That
+part is done.
+
+The remaining gap is:
+
+1. stop preserving partition 3 from `SoCKit_SD_revD.img`
+2. generate the raw boot payload ourselves
+3. emit a complete SD image from repo-managed inputs only
+
+The strongest current lead is to adapt the nearby Buildroot Cyclone V pattern
+instead of inventing a one-off SoCFPGA boot flow from scratch.
+
+That means the first investigation should be:
+
+- whether the SoCKit can boot cleanly from a Buildroot-generated
+  `barebox` + `socfpga-xload-2` path
+- what SoCKit-specific environment, DT, or storage assumptions differ from the
+  DE10-Nano reference
+- whether we want full ownership through `barebox`, or to keep pursuing a
+  U-Boot-compatible raw partition once we understand the vendor flow better
 
 ## Most Likely Technical Work Items
 
@@ -60,7 +89,13 @@ Recommended order:
 - verify whether any SoCKit-specific fixes are still needed on top of that DTS
 - verify UART, MMC, Ethernet, and HPS bridge nodes in the DTB
 - wire kernel + DTB artifacts into a generated FAT image
-- verify U-Boot can still boot them with the current simple flow
+- prototype a generated raw partition using the Buildroot Cyclone V
+  `barebox` / xload reference flow
+- create a SoCKit-specific `genimage` layout for the full-stack path
+- remove the external Terasic reference-image dependency once the generated
+  early-boot path is stable
+- then verify serial, MMC, Ethernet, ssh, and HPS bridge access on the fully
+  self-hosted image
 
 ## Main Unknowns
 
@@ -69,6 +104,9 @@ Recommended order:
   Cyclone V reference board
 - what exact format and contents the raw `0xa2` partition expects when we
   finally replace it
+- whether SoCKit early boot is best owned by adapting the Buildroot
+  `barebox`-based Cyclone V flow or by recreating a U-Boot/SPL layout closer to
+  the vendor image
 
 ## Working Assumption
 

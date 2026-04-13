@@ -85,6 +85,43 @@ Write scope:
 - `sw/hps-image/scripts/`
 - `sw/hps-image/README.md`
 
+## Task 6: Early-Boot Ownership
+
+Goal:
+Replace the preserved Terasic raw `0xa2` partition with a generated early-boot
+payload so the full-stack image no longer depends on `SoCKit_SD_revD.img`.
+
+Deliverables:
+
+- recommendation on whether to adapt the Buildroot Cyclone V
+  `barebox` + `socfpga-xload-2` path or stay closer to the vendor U-Boot flow
+- concise note describing the expected partition-3 payload and image layout
+- any required SoCKit-specific config fragments or board files
+
+Write scope:
+
+- `sw/hps-image/full-stack/notes/`
+- `sw/hps-image/full-stack/configs/`
+- `sw/hps-image/board/sockit_cyclone5/`
+
+## Task 7: Fully Owned Image Validation
+
+Goal:
+Once partition 3 is generated locally, verify that the resulting SD image is
+suitable as the normal development image for the board.
+
+Deliverables:
+
+- boot confirmation notes covering serial login, MMC, network, and ssh
+- confirmation that the host SDK can deploy a small HPS/FPGA bridge test
+- updates to `STATUS.md` and the relevant README files
+
+Write scope:
+
+- `sw/hps-image/STATUS.md`
+- `sw/hps-image/full-stack/README.md`
+- `sw/hps-image/full-stack/notes/`
+
 ## Coordination Rules
 
 - Avoid editing the same note file from multiple agents.

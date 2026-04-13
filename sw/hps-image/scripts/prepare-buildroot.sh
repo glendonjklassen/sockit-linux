@@ -3,6 +3,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 hps_dir="$repo_root/sw/hps-image"
+board_dir="$hps_dir/board"
 src_dir="$hps_dir/buildroot-src"
 dl_dir="$hps_dir/dl"
 defconfig="$hps_dir/configs/sockit_cyclone5_rootfs_first_defconfig"
@@ -13,7 +14,7 @@ usage() {
     cat <<EOF
 Usage: $(basename "$0") [--fresh] [--output-dir PATH]
 
-Prepare a local Buildroot output tree for the SoCKit rootfs-first workflow.
+Prepare a local Buildroot output tree for a SoCKit image workflow.
 
 Options:
   --fresh            re-seed the output tree from the checked-in defconfig
@@ -61,6 +62,11 @@ fi
 
 mkdir -p "$out_dir" "$dl_dir"
 
+if [[ -d "$board_dir" ]]; then
+    mkdir -p "$out_dir/board"
+    cp -a "$board_dir/." "$out_dir/board/"
+fi
+
 make_args=(
     -C "$src_dir"
     O="$out_dir"
@@ -82,6 +88,9 @@ Buildroot source is ready:
 Output tree:
   $out_dir
 
+Board support files:
+  $out_dir/board
+
 Config sync:
   $sync_mode
 
@@ -89,10 +98,10 @@ Defconfig:
   $defconfig
 
 Next steps:
-  1. Build the rootfs:
+  1. Build the selected image workflow:
        make -C $src_dir O=$out_dir BR2_DL_DIR=$dl_dir
-  2. Assemble a SoCKit SD image that reuses the known-good boot partitions:
-       $hps_dir/scripts/assemble-rootfs-first-image.sh --buildroot-output $out_dir
+  2. If your defconfig does not already emit a final SD image, run the
+     matching assembly helper for that workflow.
 
 If you want to discard the current output .config and start from the repo
 defconfig again, rerun this script with --fresh.

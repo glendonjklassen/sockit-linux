@@ -16,9 +16,13 @@ We validated the FPGA side and recovered a working HPS boot by returning to a
 known-good SD image. From there we built and booted a Buildroot musl-based
 rootfs-first image successfully, and in parallel assembled a first
 kernel-owned SD image. That kernel-owned image has also now booted
-successfully, but it is still carrying a provisional DE0-Nano-derived DTB.
-The next workstream is not FPGA debugging; it is HPS image modernization and
-reproducibility.
+successfully. The repo has now been updated so the full-stack path is the main
+project, including a Buildroot-managed attempt at generating the raw `0xa2`
+partition locally instead of copying it from `SoCKit_SD_revD.img`.
+That workflow has now produced a first owned image at
+`sw/hps-image/output-full-stack/images/sdcard-full-stack.img`.
+The next workstream is to hardware-boot-test that locally generated full-stack
+image, not to revisit FPGA debugging.
 
 ## Constraints
 
@@ -33,12 +37,12 @@ reproducibility.
 
 ## Good Next Actions
 
-- use the working musl rootfs-first image as the day-to-day development image
+- build the primary owned-image workflow with
+  `sw/hps-image/scripts/build-full-stack.sh --sdk`
+- boot-test that generated SD image on hardware
+- verify serial login, DHCP, `sshd`, and rootfs mount on the generated image
 - deploy and run a host-built HPS/FPGA bridge test binary on that image
-- replace the provisional DE0-Nano DTB in `sw/hps-image/full-stack/` with a
-  SoCKit-specific DTS or DTS adaptation
-- rebuild and re-boot-test the kernel-owned image after the DTS update
-- keep generated artifacts out of git while preserving the checked-in workflow
+- keep the older rootfs-first path available only as a fallback comparison
 
 ## If You Need To Rebuild Context
 
@@ -52,8 +56,9 @@ Useful facts already established:
 - that working Buildroot image obtained DHCP on `eth0`
 - the first kernel-owned image now boots Linux 5.11 to a `root` shell
 - that kernel-owned image also obtained DHCP on `eth0`
-- the remaining known correctness gap is the provisional DT model /
-  board-description mismatch
+- the SoCKit-DTS kernel-owned rebuild also booted successfully
+- the repo now contains a generated early-boot full-stack path, but that new
+  path has not yet been hardware boot-tested
 
 ## Update Discipline
 

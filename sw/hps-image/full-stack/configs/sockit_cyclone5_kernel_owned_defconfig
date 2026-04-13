@@ -1,3 +1,6 @@
+# Historical snapshot kept for comparison while the repo transitions to the
+# full-stack-first workflow in `sockit_cyclone5_full_stack_defconfig`.
+#
 BR2_arm=y
 BR2_cortex_a9=y
 BR2_ARM_ENABLE_NEON=y

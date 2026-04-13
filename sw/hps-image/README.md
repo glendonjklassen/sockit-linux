@@ -36,16 +36,15 @@ Things we do not want in git:
 
 ## Current Strategy
 
-We are intentionally starting with the least-risk path:
+We now have two SoCKit image paths in this repo:
 
-1. Preserve the known-good vendor SD image as a fallback.
-2. Inventory the current boot layout and running software.
-3. Build a fresh development-oriented image in a reproducible way.
-4. Reuse as much of the currently working boot flow as possible at first.
-5. Replace more of the stack later only if it buys us something.
+1. the primary full-stack workflow that owns early boot, kernel, DTB, and
+   rootfs through Buildroot-managed artifacts
+2. the conservative rootfs-first fallback that still reuses the vendor boot
+   chain and reference SD image
 
-The default assumption is that Buildroot is the best fit for the first custom
-image, but that decision is not locked in yet.
+Buildroot is no longer just the likely fit here; it is the active base for the
+repo-managed SoCKit image.
 
 ## Directory Layout
 
@@ -57,7 +56,7 @@ image, but that decision is not locked in yet.
 - [configs/](/home/gjklassen/code/sockit-ids/sw/hps-image/configs): checked-in config files
 - [scripts/](/home/gjklassen/code/sockit-ids/sw/hps-image/scripts): reproducible helper scripts
 - [patches/](/home/gjklassen/code/sockit-ids/sw/hps-image/patches): local patches if needed later
-- [full-stack/](/home/gjklassen/code/sockit-ids/sw/hps-image/full-stack): separate workstream for owning kernel and DTB too
+- [full-stack/](/home/gjklassen/code/sockit-ids/sw/hps-image/full-stack): notes and compatibility wrappers for the primary owned-image path
 
 Ignored local directories used by builds:
 
@@ -100,31 +99,23 @@ The intended workflow is:
 That matches Buildroot much better than trying to make the SoCKit a
 self-hosted development machine.
 
-In parallel, there is now a separate kernel / DTB ownership track under
-[full-stack/](/home/gjklassen/code/sockit-ids/sw/hps-image/full-stack). That
-workstream is where we can start replacing the vendor `zImage` and
-`socfpga.dtb` without destabilizing the more conservative rootfs-first path.
+The default development target is now the full-stack owned-image workflow. The
+older rootfs-first path remains useful as a fallback when we need a comparison
+against the preserved vendor boot chain.
 
 ## External Inputs
 
 This repo intentionally does not include vendor image payloads.
 
-The current rootfs-first SD-image workflow still reuses the known-good SoCKit
-boot partitions from the Terasic Rev. D "CD-ROM" package. In practice that
-means a fresh clone also needs a local copy of the Rev. D boot image, such as
-`SoCKit_SD_revD.img`, obtained from Terasic's distribution outside this MIT
-repo.
+The primary full-stack workflow is designed to build a complete SD image from
+repo-managed artifacts only. The older rootfs-first fallback still reuses the
+known-good SoCKit boot partitions from the Terasic Rev. D "CD-ROM" package, so
+that fallback path still needs a local copy of `SoCKit_SD_revD.img` obtained
+outside this MIT repo.
 
-The repo recipe owns the Buildroot rootfs and SDK generation. While this
-rootfs-first path still reuses the old vendor `3.12.0` kernel, the checked-in
-Buildroot defconfig is intentionally musl-based so the userspace can boot on
-that older runtime. It does not yet fully own the boot image contents in the
-FAT boot partition or the tiny raw boot partition.
+## Primary Workflow
 
-## First Concrete Work Items
-
-The current next step is to pin a Buildroot release and fetch it into the local
-ignored workspace.
+Fetch the pinned Buildroot release into the local ignored workspace:
 
 There is an intentionally conservative helper script at
 [scripts/fetch-buildroot.sh](/home/gjklassen/code/sockit-ids/sw/hps-image/scripts/fetch-buildroot.sh).
@@ -143,49 +134,56 @@ documented in
 Once Buildroot is fetched, the main one-shot workflow is:
 
 ```bash
-./sw/hps-image/scripts/build-rootfs-first.sh --sdk
+./sw/hps-image/scripts/build-full-stack.sh --sdk
 ```
 
 That command:
 
-- syncs the output tree from the checked-in SoCKit defconfig
-- builds the Buildroot root filesystem and host toolchain
+- syncs the output tree from the checked-in full-stack defconfig
+- syncs the checked-in SoCKit board support files into that output tree
+- builds the Buildroot root filesystem, kernel, DTB, and early-boot payload
 - exports a relocatable musl-based SDK tarball for host-side cross-compilation
-- assembles an SD image by reusing the known-good SoCKit boot partitions and
-  replacing only the Linux root filesystem partition
+- validates the generated SD image and records a manifest for it
 
-The SD-image assembly step expects a locally available reference image from the
-Terasic Rev. D "CD-ROM" package. By default the scripts look for:
+The default output tree for this path is:
 
 ```bash
-$PWD/SoCKit_SD_revD.img
-```
-
-You can override that path with:
-
-```bash
-SOCKIT_REFERENCE_IMAGE=/path/to/SoCKit_SD_revD.img \
-  ./sw/hps-image/scripts/build-rootfs-first.sh --sdk
+sw/hps-image/output-full-stack/
 ```
 
 If you want to run the steps separately:
 
 ```bash
-./sw/hps-image/scripts/prepare-buildroot.sh --fresh
+./sw/hps-image/scripts/prepare-buildroot.sh \
+  --fresh \
+  --defconfig $PWD/sw/hps-image/full-stack/configs/sockit_cyclone5_full_stack_defconfig \
+  --output-dir $PWD/sw/hps-image/output-full-stack
 make -C sw/hps-image/buildroot-src \
-  O=$PWD/sw/hps-image/output-rootfs-first \
+  O=$PWD/sw/hps-image/output-full-stack \
   BR2_DL_DIR=$PWD/sw/hps-image/dl
-./sw/hps-image/scripts/export-sdk.sh
-./sw/hps-image/scripts/assemble-rootfs-first-image.sh
+make -C sw/hps-image/buildroot-src \
+  O=$PWD/sw/hps-image/output-full-stack \
+  BR2_DL_DIR=$PWD/sw/hps-image/dl sdk
+./sw/hps-image/scripts/assemble-full-stack-image.sh \
+  --buildroot-output $PWD/sw/hps-image/output-full-stack
 ```
 
-The exported SDK lands in `sw/hps-image/output-rootfs-first/images/`. After
+The exported SDK lands in `sw/hps-image/output-full-stack/images/`. After
 extracting it on the dev box, run `./relocate-sdk.sh` and then
 `. ./environment-setup` in the extracted SDK directory before building your own
-HPS-side software. Because the rootfs-first path still rides on the vendor
-kernel, this SDK currently targets musl for maximum runtime compatibility; the
-separate `full-stack/` workstream is where we can later move to a newer
-kernel-owned stack.
+HPS-side software.
+
+## Fallback Workflow
+
+If we need to compare against the preserved vendor boot chain, the older
+rootfs-first workflow is still available:
+
+```bash
+./sw/hps-image/scripts/build-rootfs-first.sh --sdk
+```
+
+That fallback still depends on a local `SoCKit_SD_revD.img` from the Terasic
+Rev. D distribution.
 
 There is also an offline SD-image inspection helper at
 [scripts/inventory-sd-image.sh](/home/gjklassen/code/sockit-ids/sw/hps-image/scripts/inventory-sd-image.sh)

@@ -1,6 +1,21 @@
 # sockit-ids
 An IDS project for SoCKit for sandbox and learning purposes.
 
+## Active HPS Image Work
+
+The active software-stack effort in this repo is now the full-stack SoCKit HPS
+image under [sw/hps-image/](/home/gjklassen/code/sockit-ids/sw/hps-image/README.md).
+
+The primary build entry point is:
+
+```bash
+./sw/hps-image/scripts/build-full-stack.sh --sdk
+```
+
+That workflow is intended to generate a complete SD image from repo-managed
+artifacts. The older rootfs-first path remains available only as a fallback
+comparison against the preserved vendor boot chain.
+
 ## First Bring-Up
 
 The first FPGA image in this repo is a simple VHDL learner exercise for the SoCKit board.

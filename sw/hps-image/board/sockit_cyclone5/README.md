@@ -2,11 +2,12 @@
 
 This directory is for SoCKit-specific Buildroot integration files.
 
-The current plan is intentionally incremental:
+The full-stack image path is now the primary workflow:
 
-- first, build a modern development-oriented root filesystem
-- preserve the known-good boot flow where possible
-- only replace kernel / DTB / early boot pieces when there is a clear need
+- Buildroot owns the raw `0xa2` boot payload
+- Buildroot owns the FAT boot partition
+- Buildroot owns the Linux root filesystem
+- the older rootfs-first path remains here only as a fallback
 
 ## Reference Point
 
@@ -33,3 +34,14 @@ From the known-good image:
 
 That is close enough to the DE10-Nano example to justify reusing its structure
 as a learning reference, while still keeping SoCKit-specific files here.
+
+## Files In This Folder
+
+- `genimage-full-stack.cfg`: the primary repo-owned SD image layout
+- `barebox-env/`: SoCKit-specific `barebox` environment for the full-stack path
+- `genimage-rootfs-first.cfg`: conservative fallback layout used only by the
+  reference-image-based rootfs-first path
+
+`prepare-buildroot.sh` copies this directory into the active Buildroot output
+tree so the checked-in defconfigs can reference the board files without
+modifying the fetched Buildroot source tree.

@@ -45,6 +45,12 @@ Create a reproducible HPS image workspace for the SoCKit board and document the
 - That rebuilt SoCKit-DTS image has now been boot-tested successfully on
   hardware: it reaches a root shell, mounts the Buildroot rootfs, starts
   `sshd`, and brings `eth0` up on DHCP at `192.168.2.245`
+- The repo now also has a Buildroot-managed full-stack SD-image workflow that
+  generates the raw `0xa2` partition locally instead of copying it from
+  `SoCKit_SD_revD.img`
+- That new locally generated early-boot path has now produced a first complete
+  owned image at `sw/hps-image/output-full-stack/images/sdcard-full-stack.img`
+- That first repo-owned full-stack image has not been hardware boot-tested yet
 
 ## Why We Are Starting This Workspace
 
@@ -58,24 +64,25 @@ Even a tiny HPS-to-FPGA bridge test ran into friction because the image lacks:
 
 ## Immediate Next Steps
 
-1. Log into the working musl rootfs-first image and verify the expected shell,
-   filesystem, and deployment flow over the network.
-2. Deploy and run a small host-built HPS/FPGA bridge test binary on that
-   working image.
-3. Capture and record the running SoCKit model string explicitly from the new
-   kernel-owned image, since the serial console made post-boot command output
-   noisy during the first proof boot.
-4. Verify any remaining board-specific peripherals and then continue toward
-   replacing the preserved raw boot partition.
+1. Treat the SoCKit-DTS kernel-owned image as the primary development baseline,
+   not just a side experiment, because it now boots successfully with our own
+   kernel, DTB, and Buildroot rootfs.
+2. Boot-test the new Buildroot-managed full-stack SD image that generates the
+   raw `0xa2` partition locally.
+3. Verify serial login, MMC, networking, `sshd`, and the SoCKit model / DT
+   identity on that self-contained image.
+4. Validate the host-SDK and HPS-to-FPGA demo workflow on that fully owned
+   image and then demote the rootfs-first path to fallback status.
 
 ## Parallel Workstream
 
-- A separate kernel / DTB ownership track now exists under
-  `sw/hps-image/full-stack/`.
-- That track is for replacing the vendor `zImage` and `socfpga.dtb` while
-  keeping the current rootfs-first path available as a fallback.
-- Its first output image is
-  `sw/hps-image/output-kernel-owned/images/sdcard-kernel-owned.img`.
+- The kernel / DTB ownership track under `sw/hps-image/full-stack/` is now a
+  proven boot path, not just an exploratory branch.
+- That track should become the main route for image modernization while the
+  current rootfs-first path remains available as a fallback.
+- Its current gap is no longer kernel bring-up; it is early-boot ownership of
+  the raw `0xa2` partition and removal of the external Terasic reference-image
+  dependency.
 
 ## Newly Captured Boot Facts
 
