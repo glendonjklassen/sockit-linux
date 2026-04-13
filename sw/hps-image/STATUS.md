@@ -124,6 +124,12 @@ Even a tiny HPS-to-FPGA bridge test ran into friction because the image lacks:
 - An overlapped serial-monitor session also captured `Linux sockit 5.11.0`,
   which is consistent with the owned kernel path, but a clean login transcript
   is still worth capturing next.
+- A clean serial login has now confirmed:
+  `Linux sockit 5.11.0`, `root=/dev/mmcblk0p3`, model `Terasic SoCkit`,
+  live DHCP on `eth0`, and an active `sshd` listener.
+- Stock OpenSSH policy still blocks passwordless root SSH over the network
+  until an authorized key is installed, so the image flow now needs a simple
+  key-provisioning path for development use.
 
 ## Definition Of Done For Option A
 

@@ -29,6 +29,10 @@ That boot issue is now fixed: the corrected image boots on hardware through
 `root=/dev/mmcblk0p3`, and reaches `Welcome to Buildroot` plus `sockit login:`.
 The next workstream is a clean single-console login capture and then the
 HPS-to-FPGA development workflow, not FPGA debugging.
+That clean login capture is now done: the board reports `Linux sockit 5.11.0`,
+`root=/dev/mmcblk0p3`, model `Terasic SoCkit`, DHCP on `eth0`, and a listening
+`sshd`. The next friction point is SSH key provisioning for fresh
+images, not boot reliability.
 
 ## Constraints
 

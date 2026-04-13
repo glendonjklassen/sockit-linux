@@ -23,6 +23,10 @@ Build the primary SoCKit full-stack image workflow end to end:
   3. build the owned SoCKit rootfs, kernel, DTB, and early-boot payload
   4. generate a self-contained SD image with no Terasic reference-image copy
   5. optionally export a host-side SDK for cross-compiling HPS software
+
+Optional environment:
+  SOCKIT_AUTHORIZED_KEYS_FILE=/path/to/id_ed25519.pub
+      install this public key as /root/.ssh/authorized_keys in the image
 EOF
 }
 
@@ -62,12 +66,13 @@ bash "$hps_dir/scripts/prepare-buildroot.sh" \
     --output-dir "$out_dir"
 
 if [[ "$fresh_config" -eq 1 ]]; then
-    # Barebox and barebox-aux keep their own Kconfig state under the package
-    # build directories, so seed-from-defconfig needs an explicit reset here.
+    # Barebox, barebox-aux, and Linux keep their own package state under the
+    # Buildroot output tree, so seed-from-defconfig needs an explicit reset here
+    # when bootloader, kernel, or DTS selections change.
     GIT_CONFIG_GLOBAL=/dev/null \
     GIT_CONFIG_NOSYSTEM=1 \
     make -C "$src_dir" O="$out_dir" BR2_DL_DIR="$dl_dir" \
-        barebox-dirclean barebox-aux-dirclean
+        barebox-dirclean barebox-aux-dirclean linux-dirclean
 fi
 
 GIT_CONFIG_GLOBAL=/dev/null \

@@ -141,6 +141,14 @@ Once Buildroot is fetched, the main one-shot workflow is:
 ./sw/hps-image/scripts/build-full-stack.sh --sdk
 ```
 
+If you want immediate SSH access to fresh images without doing serial-side key
+setup first, provide a public key at build time:
+
+```bash
+SOCKIT_AUTHORIZED_KEYS_FILE=$HOME/.ssh/id_ed25519.pub \
+  ./sw/hps-image/scripts/build-full-stack.sh --fresh-config --sdk
+```
+
 That command:
 
 - syncs the output tree from the checked-in full-stack defconfig

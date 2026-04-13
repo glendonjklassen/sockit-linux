@@ -39,9 +39,31 @@ as a learning reference, while still keeping SoCKit-specific files here.
 
 - `genimage-full-stack.cfg`: the primary repo-owned SD image layout
 - `barebox-env/`: SoCKit-specific `barebox` environment for the full-stack path
+- `dts/`: repo-owned SoCKit DTS overrides for the full-stack kernel build
 - `genimage-rootfs-first.cfg`: conservative fallback layout used only by the
   reference-image-based rootfs-first path
 
 `prepare-buildroot.sh` copies this directory into the active Buildroot output
 tree so the checked-in defconfigs can reference the board files without
 modifying the fetched Buildroot source tree.
+
+## Optional SSH Key Injection
+
+The full-stack path now includes a board-specific post-build hook:
+
+- `post-build.sh`
+
+If you export `SOCKIT_AUTHORIZED_KEYS_FILE=/path/to/your.pub` before running
+the full-stack build, that public key is installed into:
+
+- `/root/.ssh/authorized_keys`
+
+This keeps the default OpenSSH policy of key-based root login without requiring
+manual serial-side key setup on every fresh image.
+
+## Lightweight Bridge Note
+
+The repo-owned SoCKit DTS under `dts/` explicitly enables the lightweight
+HPS-to-FPGA bridge. The upstream SoCFPGA DTS leaves that bridge disabled, and
+touching `0xFF200000` from Linux with the bridge still disabled can wedge the
+board.
