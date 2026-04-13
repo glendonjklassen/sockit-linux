@@ -14,7 +14,9 @@ The primary build entry point is:
 
 That workflow is intended to generate a complete SD image from repo-managed
 artifacts. The older rootfs-first path remains available only as a fallback
-comparison against the preserved vendor boot chain.
+comparison against the preserved vendor boot chain. The corrected full-stack
+image now boots on the SoCKit through repo-owned `barebox`, kernel, DTB, and
+Buildroot userspace.
 
 ## First Bring-Up
 

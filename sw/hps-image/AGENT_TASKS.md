@@ -94,7 +94,7 @@ payload so the full-stack image no longer depends on `SoCKit_SD_revD.img`.
 Deliverables:
 
 - recommendation on whether to adapt the Buildroot Cyclone V
-  `barebox` + `socfpga-xload-2` path or stay closer to the vendor U-Boot flow
+  `barebox` + `socfpga-xload` path or stay closer to the vendor U-Boot flow
 - concise note describing the expected partition-3 payload and image layout
 - any required SoCKit-specific config fragments or board files
 

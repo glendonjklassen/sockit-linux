@@ -53,13 +53,26 @@ The new full-stack path is intended to generate:
 
 Current nuance:
 
-- the upstream `barebox` AUX/xload build we are using emits the SoCFPGA SoCDK
-  xload artifact name, `barebox-socfpga-socdk-xload.img`
-- the SoCKit full-stack layout currently uses that generated xload image for
-  partition 1 while keeping the SoCKit-specific main `barebox` image and DTB
+- the SoCKit SD path requires the SoCKit-specific first-stage `barebox`
+  artifact, `barebox-socfpga-sockit-xload.img`
+- an earlier full-stack attempt was mistakenly wired to the `socfpga-xload-2`
+  / SoCDK AUX build, and that image failed to show serial output on hardware
+- the checked-in full-stack workflow now targets `socfpga-xload_defconfig` for
+  partition 1 so the generated image matches the upstream SoCFPGA barebox
+  guidance for SoCKit boot
 
-That implementation is now checked in, but it still needs hardware boot
-validation on the SoCKit.
+This corrected implementation has now been rebuilt and boot-tested on the
+SoCKit. Serial confirms:
+
+- `barebox 2021.07.0`
+- the SoCKit DTB load from `/boot/socfpga_cyclone5_sockit.dtb`
+- `root=/dev/mmcblk0p3`
+- `Welcome to Buildroot`
+- `sockit login:`
+
+See
+[`notes/boot-validation-2026-04-12.md`](/home/gjklassen/code/sockit-ids/sw/hps-image/full-stack/notes/boot-validation-2026-04-12.md)
+for the captured evidence and remaining follow-up.
 
 A nearby Buildroot reference still matters here because it showed the first
 plausible ownership model for Cyclone V early boot:
@@ -120,5 +133,5 @@ We already know:
 - candidate Buildroot config fragments for the owned-image path
 - SoCKit-specific board files for generated boot partitions
 - scripts and wrappers for building and validating the full-stack SD image
-- notes about the remaining hardware validation gap for the generated
-  early-boot path
+- notes about the remaining on-device workflow validation after the corrected
+  generated early-boot path booted successfully

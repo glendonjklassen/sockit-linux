@@ -48,5 +48,5 @@ BR2_TARGET_BAREBOX_IMAGE_FILE="images/barebox-socfpga-sockit.img"
 BR2_TARGET_BAREBOX_CUSTOM_ENV=y
 BR2_TARGET_BAREBOX_CUSTOM_ENV_PATH="$(CONFIG_DIR)/board/sockit_cyclone5/barebox-env"
 BR2_TARGET_BAREBOX_AUX=y
-BR2_TARGET_BAREBOX_AUX_BOARD_DEFCONFIG="socfpga-xload-2"
-BR2_TARGET_BAREBOX_AUX_IMAGE_FILE="images/barebox-socfpga-socdk-xload.img"
+BR2_TARGET_BAREBOX_AUX_BOARD_DEFCONFIG="socfpga-xload"
+BR2_TARGET_BAREBOX_AUX_IMAGE_FILE="images/barebox-socfpga-sockit-xload.img"

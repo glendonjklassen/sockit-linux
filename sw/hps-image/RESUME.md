@@ -21,8 +21,14 @@ project, including a Buildroot-managed attempt at generating the raw `0xa2`
 partition locally instead of copying it from `SoCKit_SD_revD.img`.
 That workflow has now produced a first owned image at
 `sw/hps-image/output-full-stack/images/sdcard-full-stack.img`.
-The next workstream is to hardware-boot-test that locally generated full-stack
-image, not to revisit FPGA debugging.
+That first full-stack boot attempt failed before serial output, and local
+inspection showed the image was using the wrong barebox AUX target
+(`socfpga-xload-2` / SoCDK) instead of the SoCKit xload.
+That boot issue is now fixed: the corrected image boots on hardware through
+`barebox 2021.07.0`, loads `socfpga_cyclone5_sockit.dtb`, uses
+`root=/dev/mmcblk0p3`, and reaches `Welcome to Buildroot` plus `sockit login:`.
+The next workstream is a clean single-console login capture and then the
+HPS-to-FPGA development workflow, not FPGA debugging.
 
 ## Constraints
 
@@ -39,7 +45,7 @@ image, not to revisit FPGA debugging.
 
 - build the primary owned-image workflow with
   `sw/hps-image/scripts/build-full-stack.sh --sdk`
-- boot-test that generated SD image on hardware
+- perform one clean single-console login on the generated image
 - verify serial login, DHCP, `sshd`, and rootfs mount on the generated image
 - deploy and run a host-built HPS/FPGA bridge test binary on that image
 - keep the older rootfs-first path available only as a fallback comparison
@@ -57,8 +63,9 @@ Useful facts already established:
 - the first kernel-owned image now boots Linux 5.11 to a `root` shell
 - that kernel-owned image also obtained DHCP on `eth0`
 - the SoCKit-DTS kernel-owned rebuild also booted successfully
-- the repo now contains a generated early-boot full-stack path, but that new
-  path has not yet been hardware boot-tested
+- the corrected generated early-boot full-stack path now boots on hardware
+- the serial evidence for that successful full-stack boot is recorded in
+  `sw/hps-image/full-stack/notes/boot-validation-2026-04-12.md`
 
 ## Update Discipline
 

@@ -103,6 +103,10 @@ The default development target is now the full-stack owned-image workflow. The
 older rootfs-first path remains useful as a fallback when we need a comparison
 against the preserved vendor boot chain.
 
+That full-stack path has now been boot-validated on hardware after correcting
+the SoCKit first-stage `barebox` target. The current next step is no longer
+"make it boot," it is "use the booted image as the development baseline."
+
 ## External Inputs
 
 This repo intentionally does not include vendor image payloads.
@@ -172,6 +176,10 @@ The exported SDK lands in `sw/hps-image/output-full-stack/images/`. After
 extracting it on the dev box, run `./relocate-sdk.sh` and then
 `. ./environment-setup` in the extracted SDK directory before building your own
 HPS-side software.
+
+If you have changed the checked-in full-stack defconfig or bootloader settings,
+rerun the helper with `--fresh-config` so the `barebox` package build
+directories are reset before rebuilding.
 
 ## Fallback Workflow
 

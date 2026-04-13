@@ -10,6 +10,7 @@ defconfig="$full_stack_dir/configs/sockit_cyclone5_full_stack_defconfig"
 out_dir="${BUILDROOT_OUTPUT_DIR:-$hps_dir/output-full-stack}"
 jobs="${JOBS:-$(nproc)}"
 build_sdk=0
+fresh_config=0
 prepare_args=(--defconfig "$defconfig")
 
 usage() {
@@ -29,6 +30,7 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --fresh-config)
             prepare_args+=(--fresh)
+            fresh_config=1
             shift
             ;;
         --output-dir)
@@ -58,6 +60,15 @@ done
 bash "$hps_dir/scripts/prepare-buildroot.sh" \
     "${prepare_args[@]}" \
     --output-dir "$out_dir"
+
+if [[ "$fresh_config" -eq 1 ]]; then
+    # Barebox and barebox-aux keep their own Kconfig state under the package
+    # build directories, so seed-from-defconfig needs an explicit reset here.
+    GIT_CONFIG_GLOBAL=/dev/null \
+    GIT_CONFIG_NOSYSTEM=1 \
+    make -C "$src_dir" O="$out_dir" BR2_DL_DIR="$dl_dir" \
+        barebox-dirclean barebox-aux-dirclean
+fi
 
 GIT_CONFIG_GLOBAL=/dev/null \
 GIT_CONFIG_NOSYSTEM=1 \

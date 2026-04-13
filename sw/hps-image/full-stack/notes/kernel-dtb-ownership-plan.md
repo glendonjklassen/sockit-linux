@@ -56,8 +56,12 @@ Recommended order:
   `terasic_de10nano_cyclone5`, that already generates a raw `0xa2` partition,
   FAT boot partition, Linux rootfs partition, and complete `sdcard.img`
 - that nearby reference uses Buildroot-managed `barebox` plus an auxiliary
-  `socfpga-xload-2` image rather than preserving a vendor image sector-for-
-  sector
+  xload image rather than preserving a vendor image sector-for-sector
+- upstream barebox documents the SoCKit SD flow explicitly as
+  `socfpga-xload_defconfig` plus `images/barebox-socfpga-sockit-xload.img`
+- our first full-stack attempt accidentally used the `socfpga-xload-2`
+  variant, which excludes `CONFIG_MACH_SOCFPGA_TERASIC_SOCKIT` and is the most
+  likely reason that image failed before serial output
 
 ## Early-Boot Ownership Direction
 
@@ -76,7 +80,7 @@ instead of inventing a one-off SoCFPGA boot flow from scratch.
 That means the first investigation should be:
 
 - whether the SoCKit can boot cleanly from a Buildroot-generated
-  `barebox` + `socfpga-xload-2` path
+  `barebox` + `socfpga-xload` path
 - what SoCKit-specific environment, DT, or storage assumptions differ from the
   DE10-Nano reference
 - whether we want full ownership through `barebox`, or to keep pursuing a
@@ -92,6 +96,8 @@ That means the first investigation should be:
 - prototype a generated raw partition using the Buildroot Cyclone V
   `barebox` / xload reference flow
 - create a SoCKit-specific `genimage` layout for the full-stack path
+- ensure the AUX / xload defconfig actually enables
+  `CONFIG_MACH_SOCFPGA_TERASIC_SOCKIT`
 - remove the external Terasic reference-image dependency once the generated
   early-boot path is stable
 - then verify serial, MMC, Ethernet, ssh, and HPS bridge access on the fully
