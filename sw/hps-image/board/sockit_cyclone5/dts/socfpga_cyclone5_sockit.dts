@@ -127,6 +127,7 @@
 };
 
 &fpga_bridge0 {
+	bridge-enable = <1>;
 	status = "okay";
 };
 

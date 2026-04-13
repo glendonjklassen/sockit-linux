@@ -13,6 +13,8 @@ module bridge_ledkey_probe_bridge_0 #(
         parameter S2F_Width = 2
     ) (
         output wire        h2f_rst_n,
+        output wire        h2f_user0_clk_export,
+        output wire        h2f_lw_activity_export,
         input  wire        new_signal_13,
         input  wire        new_signal_14,
 
@@ -171,7 +173,32 @@ module bridge_ledkey_probe_bridge_0 #(
         input  wire        f2h_sdram0_clk
     );
 
-    assign h2f_rst_n = ~new_signal_13;
+    cyclonev_hps_interface_clocks_resets #(
+        .h2f_user0_clk_freq(50),
+        .h2f_user1_clk_freq(50),
+        .h2f_user2_clk_freq(50)
+    ) hps_clocks_resets (
+        .f2h_cold_rst_req_n   (1'b1),
+        .f2h_dbg_rst_req_n    (1'b1),
+        .f2h_pending_rst_ack  (1'b0),
+        .f2h_periph_ref_clk   (new_signal_14),
+        .f2h_sdram_ref_clk    (new_signal_14),
+        .f2h_warm_rst_req_n   (1'b1),
+        .h2f_cold_rst_n       (),
+        .h2f_pending_rst_req_n(),
+        .h2f_rst_n            (h2f_rst_n),
+        .h2f_user0_clk        (h2f_user0_clk_export),
+        .h2f_user1_clk        (),
+        .h2f_user2_clk        (),
+        .ptp_ref_clk          (new_signal_14)
+    );
+
+    assign h2f_lw_activity_export =
+        (h2f_lw_AWVALID & h2f_lw_AWREADY) |
+        (h2f_lw_WVALID  & h2f_lw_WREADY)  |
+        (h2f_lw_BVALID  & h2f_lw_BREADY)  |
+        (h2f_lw_ARVALID & h2f_lw_ARREADY) |
+        (h2f_lw_RVALID  & h2f_lw_RREADY);
 
     /* Full H2F bridge is unused in this design. */
     assign h2f_AWID    = 12'b0;

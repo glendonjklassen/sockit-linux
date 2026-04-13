@@ -2,6 +2,8 @@
 *.wic
 *.img
 
+systemcd/
+
 sw/hps-image/build/
 sw/hps-image/output/
 sw/hps-image/output-*/
