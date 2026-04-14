@@ -74,6 +74,28 @@ See
 [`notes/boot-validation-2026-04-12.md`](/home/gjklassen/code/sockit-ids/sw/hps-image/full-stack/notes/boot-validation-2026-04-12.md)
 for the captured evidence and remaining follow-up.
 
+## Current FPGA Boot Status
+
+The repo-owned `barebox` boot path now reaches the FPGA-manager transaction and
+loads `.rbf` files from `/boot`, but the live April 13 hardware session showed
+that this path still fails before configuration completes.
+
+The most important A/B result is that both:
+
+- the repo `sockit_ids.rbf`
+- the Terasic vendor `soc_system_vendor.rbf`
+
+time out from `barebox` with the same configuration-done failure.
+
+That means the current blocker is not isolated to the repo bitstream itself.
+The working direction is now a hybrid image that preserves the owned kernel,
+DTB, and rootfs while replacing the early boot path with a more
+factory-style preloader/U-Boot flow.
+
+See
+[`notes/boot-time-fpga-debug-2026-04-13.md`](/home/gjklassen/code/sockit-ids/sw/hps-image/full-stack/notes/boot-time-fpga-debug-2026-04-13.md)
+for the captured hardware evidence and rationale.
+
 A nearby Buildroot reference still matters here because it showed the first
 plausible ownership model for Cyclone V early boot:
 

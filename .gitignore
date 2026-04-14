@@ -1,6 +1,7 @@
 *.tar.gz
 *.wic
 *.img
+*.pdf
 
 systemcd/
 

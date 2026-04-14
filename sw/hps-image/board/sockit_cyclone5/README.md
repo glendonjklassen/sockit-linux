@@ -67,3 +67,28 @@ The repo-owned SoCKit DTS under `dts/` explicitly enables the lightweight
 HPS-to-FPGA bridge. The upstream SoCFPGA DTS leaves that bridge disabled, and
 touching `0xFF200000` from Linux with the bridge still disabled can wedge the
 board.
+
+## Boot-Time FPGA Image
+
+The repo-owned full-stack path now treats the FPGA image as a boot artifact,
+not as a separate manual JTAG step:
+
+- `post-image.sh` converts `hw/output_files/SoCKit-IDS.sof` into
+  `sockit_ids.rbf`
+- `genimage-full-stack.cfg` places that `sockit_ids.rbf` on the FAT boot
+  partition
+- `barebox-env/boot/mmc` loads `/boot/sockit_ids.rbf` before booting Linux
+
+This mirrors the vendor SystemCD pattern, where the boot script loads an
+`.rbf` from the FAT partition before handing off to the kernel.
+
+Current hardware status:
+
+- the `barebox` path now reaches the FPGA-manager load attempt
+- the repo `.rbf` and the vendor `.rbf` both fail there on hardware
+- the next direction is to keep the owned Linux artifacts but pivot the early
+  boot path toward the vendor-style preloader/U-Boot flow
+
+See
+[`../../full-stack/notes/boot-time-fpga-debug-2026-04-13.md`](/home/gjklassen/code/sockit-ids/sw/hps-image/full-stack/notes/boot-time-fpga-debug-2026-04-13.md)
+for the detailed bring-up record.
