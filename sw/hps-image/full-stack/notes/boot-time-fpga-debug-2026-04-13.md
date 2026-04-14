@@ -160,6 +160,86 @@ That LED observation is important but not yet fully explained. It could mean:
 That should be validated from Linux or by a deliberate cold-boot / known-state
 test before treating the `fpga load` error as a false negative.
 
+## Linux-Side Follow-Up After Corrected MSEL Boot
+
+A later serial login on the corrected-MSEL image changed the practical
+assessment again.
+
+From Linux on that image:
+
+- `/sys/class/fpga_manager/fpga0/state` reported `operating`
+- `/sys/class/fpga_bridge/br0/state` reported `enabled`
+- `/sbin/devmem` was available
+- direct bridge accesses at `0xFF200000` and `0xFF200010` succeeded
+
+Observed bridge transactions:
+
+- reading `0xFF200010` returned `0x00000003`, which matches the expected
+  KEY register shape for the demo design
+- writing `0xFF200000` with values such as `0xA`, `0x5`, and `0xF` stuck on
+  readback, which is consistent with the LED register being live
+
+This lines up with the repo FPGA top-level:
+
+- `LED[0]` = board-clock heartbeat
+- `LED[1]` = bridge user-clock heartbeat
+- `LED[2]` = bridge reset released
+- `LED[3]` = recent lightweight-bridge transaction seen
+
+So at least one important interpretation is now plausible:
+
+- the FPGA image may actually be loading successfully enough for Linux use,
+  while U-Boot still reports `altera_load: Failed with error code -4`
+
+The one remaining ambiguity is whether this Linux-visible FPGA state came from:
+
+- the normal cold boot path itself
+- or a prior manual `fpga load` attempt that partially or fully configured the
+  FPGA before a warm reset
+
+The next clean experiment should therefore be:
+
+1. full cold power cycle
+2. no manual U-Boot intervention
+3. let the normal script run
+4. boot Linux
+5. verify `fpga0/state`, bridge state, and LED/KEY bridge access again
+
+## Cold-Boot Validation With Corrected MSEL
+
+That clean experiment has now been run.
+
+With the board left in the corrected Terasic-documented switch setting and a
+full cold power cycle:
+
+- U-Boot ran the normal `u-boot.scr`
+- the boot log no longer showed `altera_load: Failed with error code -4`
+- Linux booted normally without any manual U-Boot interaction
+
+From Linux on that untouched cold boot:
+
+- `/sys/class/fpga_manager/fpga0/state` = `operating`
+- `/sys/class/fpga_bridge/br0/state` = `enabled`
+- `devmem 0xFF200000 32` and `devmem 0xFF200010 32` both worked
+- writing `0x0000000C` to `0xFF200000` stuck on readback immediately
+
+This removes the last big ambiguity from the earlier sessions:
+
+- the working FPGA state is not just a side effect of prior manual U-Boot load
+  attempts
+- the normal cold-boot script path works when the board is strapped for the
+  vendor-documented compressed-`.rbf` configuration mode
+
+The practical conclusion is now:
+
+- the repo U-Boot-centered hybrid image boots correctly
+- boot-time FPGA configuration works through the normal script path
+- the crucial board-side requirement was the corrected MSEL switch setting
+
+The earlier `-4` observations are still worth keeping in the history because
+they captured the failure mode with the wrong board strap state, but they no
+longer describe the corrected working setup.
+
 This means the current blocker is now even narrower:
 
 - not the repo `.rbf`

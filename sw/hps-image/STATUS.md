@@ -147,6 +147,25 @@ Even a tiny HPS-to-FPGA bridge test ran into friction because the image lacks:
 - The latest corrected-MSEL boot also produced visible blinking LEDs on the
   board, so the next check should verify from Linux whether the FPGA image is
   actually alive despite U-Boot returning `-4`
+- Linux-side follow-up on the corrected-MSEL image now shows:
+  - `/sys/class/fpga_manager/fpga0/state = operating`
+  - `/sys/class/fpga_bridge/br0/state = enabled`
+  - working `devmem` access to the lightweight bridge demo registers at
+    `0xFF200000` and `0xFF200010`
+- A later full cold-boot validation removed the remaining ambiguity:
+  - with the corrected MSEL switch setting, the untouched normal boot path
+    reaches Linux with `fpga0/state = operating`
+  - the bridge remains enabled
+  - direct `devmem` access to `0xFF200000` / `0xFF200010` still works
+- That means the repo FPGA design is now booting correctly through the normal
+  U-Boot script path once the board straps are set to the vendor-documented
+  compressed-`.rbf` mode
+- The exported Buildroot SDK has now also been used successfully on the host to
+  build `sw/hps/hps_fpga_ledkey_demo.c`, copy it to the board over SSH, and run
+  it against the live lightweight bridge registers
+- That deployed demo stepped LED values `0x0` through `0xF` successfully and
+  read back `KEY=0x3`, which confirms the intended host-build / SSH-deploy /
+  HPS-to-FPGA workflow is working on hardware
 
 ## Definition Of Done For Option A
 
