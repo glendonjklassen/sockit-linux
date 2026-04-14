@@ -62,6 +62,10 @@ Create a reproducible HPS image workspace for the SoCKit board and document the
 - The one remaining validation gap is a clean single-console login session to
   confirm DHCP/ssh state on that corrected image without overlapping UART
   monitors
+- Later FPGA-loading tests showed that the `barebox` path fails for both the
+  repo and vendor `.rbf` images during the FPGA-manager transaction, so the
+  project is now pivoting the primary path back to a vendor-style
+  preloader/U-Boot handoff while preserving the owned Linux artifacts
 
 ## Why We Are Starting This Workspace
 
@@ -75,15 +79,14 @@ Even a tiny HPS-to-FPGA bridge test ran into friction because the image lacks:
 
 ## Immediate Next Steps
 
-1. Treat the corrected full-stack image as the primary development baseline,
-   because it now boots through repo-owned early boot, kernel, DTB, and
-   Buildroot userspace on the SoCKit.
-2. Run one clean single-console login on that image and capture `uname -a`,
-   `/proc/cmdline`, `ip addr`, and `ps`/service evidence for `sshd`.
-3. Validate the host-SDK and HPS-to-FPGA demo workflow on that fully owned
-   image.
-4. Demote the rootfs-first path to fallback-only status once the bridge demo
-   works on the full-stack image.
+1. Treat the U-Boot-centered hybrid full-stack image as the primary development
+   baseline: preserve the vendor raw boot partition and U-Boot chain while
+   keeping the owned kernel, DTB, rootfs, and FPGA artifacts.
+2. Boot-test that hybrid image and capture serial evidence for FPGA load,
+   Linux boot, `/proc/cmdline`, DHCP, and `sshd`.
+3. Validate the host-SDK and HPS-to-FPGA demo workflow on that hybrid image.
+4. Keep the `barebox` path as a documented experimental branch rather than the
+   default boot path unless a board-specific fix makes its FPGA load reliable.
 
 ## Parallel Workstream
 
@@ -91,9 +94,8 @@ Even a tiny HPS-to-FPGA bridge test ran into friction because the image lacks:
   proven boot path, not just an exploratory branch.
 - That track should become the main route for image modernization while the
   current rootfs-first path remains available as a fallback.
-- Its current gap is no longer kernel bring-up or first-stage boot selection;
-  it is final on-device workflow validation after the successful full-stack
-  hardware boot.
+- Its current gap is no longer kernel bring-up; it is final on-device workflow
+  validation after the pivot back to the vendor-style U-Boot FPGA-load path.
 
 ## Newly Captured Boot Facts
 
@@ -130,6 +132,21 @@ Even a tiny HPS-to-FPGA bridge test ran into friction because the image lacks:
 - Stock OpenSSH policy still blocks passwordless root SSH over the network
   until an authorized key is installed, so the image flow now needs a simple
   key-provisioning path for development use.
+- A later April 13 hardware session narrowed the remaining problem:
+  `barebox` can boot the owned Linux stack, but its FPGA-manager load path
+  times out for both the repo and vendor `.rbf` images.
+- That result makes the current primary direction a hybrid image that preserves
+  the vendor raw boot partition and U-Boot chain while keeping the owned
+  kernel, DTB, rootfs, and FPGA artifact generation.
+- A later U-Boot-side retest also confirmed that:
+  - the board must be in the Terasic-documented compressed-`.rbf` MSEL mode
+    (`FPGAMGRREGS_STAT = 0x50`)
+  - but even in that corrected MSEL state, manual `fpga load` still fails for
+    both the byte-identical vendor `soc_system.rbf` and the repo-generated
+    `sockit_ids.rbf`
+- The latest corrected-MSEL boot also produced visible blinking LEDs on the
+  board, so the next check should verify from Linux whether the FPGA image is
+  actually alive despite U-Boot returning `-4`
 
 ## Definition Of Done For Option A
 

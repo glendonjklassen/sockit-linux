@@ -88,27 +88,27 @@ Write scope:
 ## Task 6: Early-Boot Ownership
 
 Goal:
-Replace the preserved Terasic raw `0xa2` partition with a generated early-boot
-payload so the full-stack image no longer depends on `SoCKit_SD_revD.img`.
+Preserve the documented `barebox` work while treating it as an experimental
+track, and only revisit generated early boot if there is a clear reason to go
+back after the U-Boot-centered hybrid path is stable.
 
 Deliverables:
 
-- recommendation on whether to adapt the Buildroot Cyclone V
-  `barebox` + `socfpga-xload` path or stay closer to the vendor U-Boot flow
-- concise note describing the expected partition-3 payload and image layout
-- any required SoCKit-specific config fragments or board files
+- concise note describing what the `barebox` path already proved
+- concise note describing the exact open question that blocked `barebox`
+  boot-time FPGA loading
+- recommendation on what evidence would justify returning to generated early
+  boot later
 
 Write scope:
 
 - `sw/hps-image/full-stack/notes/`
-- `sw/hps-image/full-stack/configs/`
-- `sw/hps-image/board/sockit_cyclone5/`
 
 ## Task 7: Fully Owned Image Validation
 
 Goal:
-Once partition 3 is generated locally, verify that the resulting SD image is
-suitable as the normal development image for the board.
+Once the U-Boot-centered hybrid image is stable, verify that the resulting SD
+image is suitable as the normal development image for the board.
 
 Deliverables:
 

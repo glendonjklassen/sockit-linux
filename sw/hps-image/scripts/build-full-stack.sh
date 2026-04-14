@@ -20,8 +20,8 @@ Usage: $(basename "$0") [--fresh-config] [--output-dir PATH] [--sdk] [-j JOBS]
 Build the primary SoCKit full-stack image workflow end to end:
   1. sync the Buildroot output tree from the full-stack defconfig
   2. sync SoCKit board support files into that output tree
-  3. build the owned SoCKit rootfs, kernel, DTB, and early-boot payload
-  4. generate a self-contained SD image with no Terasic reference-image copy
+  3. build the owned SoCKit rootfs, kernel, DTB, and U-Boot boot payload
+  4. assemble a hybrid SD image around the Terasic preloader/U-Boot chain
   5. optionally export a host-side SDK for cross-compiling HPS software
 
 Optional environment:
@@ -66,13 +66,12 @@ bash "$hps_dir/scripts/prepare-buildroot.sh" \
     --output-dir "$out_dir"
 
 if [[ "$fresh_config" -eq 1 ]]; then
-    # Barebox, barebox-aux, and Linux keep their own package state under the
+    # Linux and host-side image-packaging tools keep package state under the
     # Buildroot output tree, so seed-from-defconfig needs an explicit reset here
-    # when bootloader, kernel, or DTS selections change.
+    # when kernel, DTS, or boot-payload selections change.
     GIT_CONFIG_GLOBAL=/dev/null \
     GIT_CONFIG_NOSYSTEM=1 \
-    make -C "$src_dir" O="$out_dir" BR2_DL_DIR="$dl_dir" \
-        barebox-dirclean barebox-aux-dirclean linux-dirclean
+    make -C "$src_dir" O="$out_dir" BR2_DL_DIR="$dl_dir" linux-dirclean
 fi
 
 GIT_CONFIG_GLOBAL=/dev/null \

@@ -38,8 +38,9 @@ Things we do not want in git:
 
 We now have two SoCKit image paths in this repo:
 
-1. the primary full-stack workflow that owns early boot, kernel, DTB, and
-   rootfs through Buildroot-managed artifacts
+1. the primary full-stack workflow that owns the kernel, DTB, boot FAT
+   payload, and rootfs while preserving the vendor raw boot partition and
+   U-Boot chain
 2. the conservative rootfs-first fallback that still reuses the vendor boot
    chain and reference SD image
 
@@ -99,23 +100,26 @@ The intended workflow is:
 That matches Buildroot much better than trying to make the SoCKit a
 self-hosted development machine.
 
-The default development target is now the full-stack owned-image workflow. The
+The default development target is now the full-stack hybrid workflow. The
 older rootfs-first path remains useful as a fallback when we need a comparison
 against the preserved vendor boot chain.
 
-That full-stack path has now been boot-validated on hardware after correcting
-the SoCKit first-stage `barebox` target. The current next step is no longer
-"make it boot," it is "use the booted image as the development baseline."
+That full-stack track already proved a repo-owned Linux boot through the
+corrected SoCKit `barebox` path, but the boot-time FPGA load failed there for
+both the repo and vendor `.rbf` images. The current default is therefore the
+U-Boot-centered hybrid path, while the `barebox` work is kept as a documented
+experimental branch in-repo rather than being discarded.
 
 ## External Inputs
 
 This repo intentionally does not include vendor image payloads.
 
-The primary full-stack workflow is designed to build a complete SD image from
-repo-managed artifacts only. The older rootfs-first fallback still reuses the
-known-good SoCKit boot partitions from the Terasic Rev. D "CD-ROM" package, so
-that fallback path still needs a local copy of `SoCKit_SD_revD.img` obtained
-outside this MIT repo.
+The primary full-stack workflow currently preserves the vendor raw boot
+partition and U-Boot chain from the Terasic Rev. D "CD-ROM" package while
+replacing the FAT boot payload and Linux rootfs with repo-managed artifacts.
+That means the active full-stack path still needs a local copy of
+`systemcd/SoCKit_SD_revD.img`. The older rootfs-first fallback also depends on
+that same reference image.
 
 ## Primary Workflow
 
@@ -153,9 +157,10 @@ That command:
 
 - syncs the output tree from the checked-in full-stack defconfig
 - syncs the checked-in SoCKit board support files into that output tree
-- builds the Buildroot root filesystem, kernel, DTB, and early-boot payload
+- builds the Buildroot root filesystem, kernel, DTB, and U-Boot boot payload
 - exports a relocatable musl-based SDK tarball for host-side cross-compilation
-- validates the generated SD image and records a manifest for it
+- assembles the hybrid SD image around the preserved vendor boot chain and
+  records a manifest for it
 
 The default output tree for this path is:
 
@@ -185,9 +190,9 @@ extracting it on the dev box, run `./relocate-sdk.sh` and then
 `. ./environment-setup` in the extracted SDK directory before building your own
 HPS-side software.
 
-If you have changed the checked-in full-stack defconfig or bootloader settings,
-rerun the helper with `--fresh-config` so the `barebox` package build
-directories are reset before rebuilding.
+If you have changed the checked-in full-stack defconfig or Linux-side boot
+payload settings, rerun the helper with `--fresh-config` so the output tree is
+reseeded before rebuilding.
 
 ## Fallback Workflow
 

@@ -21,48 +21,53 @@ The near-term target is not "replace everything at once." It is:
 
 1. keep using the already working owned kernel + DTB + rootfs image as the
    baseline
-2. replace the preserved raw `0xa2` partition with a generated early-boot
-   payload
-3. generate the full SD image from repo-managed artifacts rather than copying
-   sectors from `SoCKit_SD_revD.img`
-4. keep the current rootfs-first workflow as a fallback until the self-hosted
-   full-stack image is equally reliable
+2. boot that owned Linux stack through the vendor-style preloader/U-Boot chain
+3. generate the FAT boot payload and rootfs from repo-managed artifacts
+4. keep the raw `0xa2` partition preserved from `SoCKit_SD_revD.img` until a
+   future fully owned early-boot path is worth revisiting
 
-That keeps the project focused on the remaining ownership gap instead of
-re-solving kernel bring-up that is already working.
+That keeps the project focused on a dependable development image instead of
+re-solving early boot before we need to.
 
 ## Current Workflow
 
-The primary repo-owned workflow now uses:
+The primary hybrid workflow now uses:
 
 - `../scripts/build-full-stack.sh`
 - `../scripts/assemble-full-stack-image.sh`
 - `configs/sockit_cyclone5_full_stack_defconfig`
 - `../board/sockit_cyclone5/genimage-full-stack.cfg`
-- `../board/sockit_cyclone5/barebox-env/`
+- `../board/sockit_cyclone5/u-boot.txt.in`
 
 The older `build-kernel-owned-image.sh` and
 `assemble-kernel-owned-image.sh` scripts remain only as compatibility wrappers.
 
-The new full-stack path is intended to generate:
+The current full-stack path generates:
 
-- the raw `0xa2` early-boot payload
-- the FAT boot partition with `zImage`, DTB, and `barebox` artifacts
+- the FAT boot partition with `zImage`, DTB, `u-boot.scr`, and FPGA artifacts
 - the Linux rootfs
-- a complete `sdcard-full-stack.img`
+- a hybrid `sdcard-full-stack.img` assembled around the preserved Terasic raw
+  boot partition and U-Boot chain
 
 Current nuance:
 
-- the SoCKit SD path requires the SoCKit-specific first-stage `barebox`
-  artifact, `barebox-socfpga-sockit-xload.img`
-- an earlier full-stack attempt was mistakenly wired to the `socfpga-xload-2`
-  / SoCDK AUX build, and that image failed to show serial output on hardware
-- the checked-in full-stack workflow now targets `socfpga-xload_defconfig` for
-  partition 1 so the generated image matches the upstream SoCFPGA barebox
-  guidance for SoCKit boot
+- the Terasic image already contains the raw preloader/U-Boot path that boots
+  this board reliably
+- the generated `u-boot.scr` now mirrors the vendor FPGA-load flow from
+  `systemcd/`
+- the full-stack image still owns the modern kernel, DTB, rootfs, and FPGA
+  artifact generation
 
-This corrected implementation has now been rebuilt and boot-tested on the
-SoCKit. Serial confirms:
+The earlier `barebox` implementation is still preserved as a documented
+experimental path. It was useful enough to prove repo-owned Linux boot on the
+board, but it is no longer the default path for boot-time FPGA loading.
+
+See
+[`notes/barebox-retrospective-2026-04-14.md`](/home/gjklassen/code/sockit-linux/sw/hps-image/full-stack/notes/barebox-retrospective-2026-04-14.md)
+for the kept context and reasons for the pivot.
+
+The corrected `barebox` implementation had previously been rebuilt and
+boot-tested on the SoCKit. Serial confirmed:
 
 - `barebox 2021.07.0`
 - the SoCKit DTB load from `/boot/socfpga_cyclone5_sockit.dtb`
@@ -76,8 +81,8 @@ for the captured evidence and remaining follow-up.
 
 ## Current FPGA Boot Status
 
-The repo-owned `barebox` boot path now reaches the FPGA-manager transaction and
-loads `.rbf` files from `/boot`, but the live April 13 hardware session showed
+The repo-owned `barebox` boot path reached the FPGA-manager transaction and
+loaded `.rbf` files from `/boot`, but the live April 13 hardware session showed
 that this path still fails before configuration completes.
 
 The most important A/B result is that both:
@@ -87,9 +92,9 @@ The most important A/B result is that both:
 
 time out from `barebox` with the same configuration-done failure.
 
-That means the current blocker is not isolated to the repo bitstream itself.
-The working direction is now a hybrid image that preserves the owned kernel,
-DTB, and rootfs while replacing the early boot path with a more
+That means the current blocker was not isolated to the repo bitstream itself.
+The active direction is now a hybrid image that preserves the owned kernel,
+DTB, and rootfs while switching boot-time FPGA loading back to a more
 factory-style preloader/U-Boot flow.
 
 See
@@ -155,5 +160,6 @@ We already know:
 - candidate Buildroot config fragments for the owned-image path
 - SoCKit-specific board files for generated boot partitions
 - scripts and wrappers for building and validating the full-stack SD image
-- notes about the remaining on-device workflow validation after the corrected
-  generated early-boot path booted successfully
+- notes about both:
+  - the preserved `barebox` experiment
+  - the current U-Boot-centered hybrid image path

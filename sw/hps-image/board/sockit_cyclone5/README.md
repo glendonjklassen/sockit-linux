@@ -4,9 +4,9 @@ This directory is for SoCKit-specific Buildroot integration files.
 
 The full-stack image path is now the primary workflow:
 
-- Buildroot owns the raw `0xa2` boot payload
 - Buildroot owns the FAT boot partition
 - Buildroot owns the Linux root filesystem
+- the Terasic raw `0xa2` boot partition and U-Boot chain are preserved for now
 - the older rootfs-first path remains here only as a fallback
 
 ## Reference Point
@@ -38,7 +38,8 @@ as a learning reference, while still keeping SoCKit-specific files here.
 ## Files In This Folder
 
 - `genimage-full-stack.cfg`: the primary repo-owned SD image layout
-- `barebox-env/`: SoCKit-specific `barebox` environment for the full-stack path
+- `u-boot.txt.in`: template for the generated vendor-style `u-boot.scr`
+- `barebox-env/`: retained as a documented experimental path, not the default
 - `dts/`: repo-owned SoCKit DTS overrides for the full-stack kernel build
 - `genimage-rootfs-first.cfg`: conservative fallback layout used only by the
   reference-image-based rootfs-first path
@@ -77,18 +78,25 @@ not as a separate manual JTAG step:
   `sockit_ids.rbf`
 - `genimage-full-stack.cfg` places that `sockit_ids.rbf` on the FAT boot
   partition
-- `barebox-env/boot/mmc` loads `/boot/sockit_ids.rbf` before booting Linux
+- `post-image.sh` generates a `u-boot.scr` that loads the `.rbf`, runs
+  `bridge_enable_handoff`, and then boots Linux through the preserved vendor
+  U-Boot chain
 
 This mirrors the vendor SystemCD pattern, where the boot script loads an
 `.rbf` from the FAT partition before handing off to the kernel.
 
 Current hardware status:
 
-- the `barebox` path now reaches the FPGA-manager load attempt
-- the repo `.rbf` and the vendor `.rbf` both fail there on hardware
-- the next direction is to keep the owned Linux artifacts but pivot the early
-  boot path toward the vendor-style preloader/U-Boot flow
+- the preserved `barebox` path reached the FPGA-manager load attempt
+- the repo `.rbf` and the vendor `.rbf` both failed there on hardware
+- the active direction is to keep the owned Linux artifacts while pivoting the
+  boot-time FPGA load back to the vendor-style preloader/U-Boot flow
 
 See
 [`../../full-stack/notes/boot-time-fpga-debug-2026-04-13.md`](/home/gjklassen/code/sockit-ids/sw/hps-image/full-stack/notes/boot-time-fpga-debug-2026-04-13.md)
 for the detailed bring-up record.
+
+See
+[`../../full-stack/notes/barebox-retrospective-2026-04-14.md`](/home/gjklassen/code/sockit-linux/sw/hps-image/full-stack/notes/barebox-retrospective-2026-04-14.md)
+for the summary of what the `barebox` work proved and why it is still worth
+keeping in the repo.

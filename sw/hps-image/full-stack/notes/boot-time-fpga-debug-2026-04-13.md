@@ -100,6 +100,79 @@ the present FPGA-manager timeout after the board has already reached
 Treat it as a separate board erratum, not as the root cause of the current
 `firmwareload` failure.
 
+## Follow-Up U-Boot / MSEL Validation
+
+A later U-Boot-side debug session tightened the diagnosis further.
+
+The Terasic `systemcd` Makefiles include an important note beside the `.rbf`
+generation rule:
+
+- the compressed raw `.rbf` flow corresponds to MSEL value `8`
+- `FPGAMGRREGS_STAT` should read `0x50`
+- the SoCKit switch pattern should be `up,down,up,down,up,up`
+
+With the board initially left in the earlier switch setting, the FPGA manager
+status register at U-Boot was:
+
+- `0x0000007a`
+
+After changing the board switches to the documented Terasic pattern and power
+cycling, the same register read became:
+
+- `0x00000050`
+
+That confirms the board-side MSEL mode was previously wrong for the compressed
+`.rbf` path, and that the later retest used the vendor-documented configuration
+mode.
+
+However, even in that corrected MSEL state, manual U-Boot tests still failed
+for both images:
+
+- `soc_system_vendor.rbf`
+- `sockit_ids.rbf`
+
+The exact manual sequence was:
+
+- `fatload mmc 0:1 ${fpgadata} ...`
+- `fpga load 0 ${fpgadata} ${filesize}`
+
+and both returned:
+
+- `altera_load: Failed with error code -4`
+
+Additional observations:
+
+- the copied `soc_system_vendor.rbf` on the generated SD image is byte-for-byte
+  identical to `systemcd/Demonstrations/Linux_BSP/Console_FB/GHRD/soc_system.rbf`
+- running `bridge_enable_handoff` before `fpga load` did not change the result
+- after the failed load, `FPGAMGRREGS_STAT` moved from `0x50` to `0x52`, so the
+  FPGA manager is reacting to the command rather than ignoring it
+- during the later corrected-MSEL boot, the user also reported visible blinking
+  LEDs on the board
+
+That LED observation is important but not yet fully explained. It could mean:
+
+- the FPGA image is actually configuring despite the `-4` return code, with the
+  error reported late or for a secondary step
+- the FPGA retained a previously programmed image across a reset path that did
+  not fully clear configuration
+
+That should be validated from Linux or by a deliberate cold-boot / known-state
+test before treating the `fpga load` error as a false negative.
+
+This means the current blocker is now even narrower:
+
+- not the repo `.rbf`
+- not the generated `u-boot.scr`
+- not the MSEL switch setting alone
+
+The remaining hypotheses are more likely to involve either:
+
+- a missing board-specific precondition in this U-Boot / preloader build
+- a mismatch between the generic factory SD preloader/U-Boot payload and the
+  exact GHRD flow described in `systemcd/Demonstrations/Linux_BSP/*/GHRD`
+- a remaining SoCKit hardware-side condition outside the obvious MSEL mode
+
 ## Reference Bootloader Clues From `systemcd/`
 
 Inspection of `systemcd/` changed the working direction significantly.

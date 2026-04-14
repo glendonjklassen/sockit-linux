@@ -1,0 +1,7 @@
+fatload mmc 0:1 ${fpgadata} @RBF_NAME@
+fpga load 0 ${fpgadata} ${filesize}
+setenv bootimage @KERNEL_IMAGE@
+setenv fdtimage @DTB_NAME@
+run bridge_enable_handoff
+run mmcload
+run mmcboot
