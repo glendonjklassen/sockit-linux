@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# Mirror the vendor SystemCD flow: load an .rbf from the FAT boot partition
+# before handing off to Linux. Use the literal path here; local shell variables
+# in this boot script did not expand reliably during cold-boot testing.
+if [ ! -f /boot/sockit_ids.rbf ]; then
+	echo "ERROR: missing FPGA image /boot/sockit_ids.rbf"
+	exit 1
+fi
+
+echo "Loading FPGA image /boot/sockit_ids.rbf"
+firmwareload /boot/sockit_ids.rbf
+if [ $? -ne 0 ]; then
+	echo "ERROR: FPGA configuration failed"
+	exit 1
+fi
+
+# shellcheck disable=SC2276
+global.bootm.oftree="/boot/socfpga_cyclone5_sockit.dtb"
+global.bootm.image="/boot/zImage"
+
+#bootargs-ip
+
+global.linux.bootargs.dyn.root="root=/dev/mmcblk0p3 rw rootwait"

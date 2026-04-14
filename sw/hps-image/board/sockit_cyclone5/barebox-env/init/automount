@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# The generated full-stack image uses:
+#   p1 -> raw xload / SPL-style payload
+#   p2 -> FAT boot partition
+#   p3 -> Linux rootfs
+mkdir -p /mnt/mmcblk0p2
+automount -d /mnt/mmcblk0p2 'mount /dev/mmc0.1 /mnt/mmcblk0p2'
