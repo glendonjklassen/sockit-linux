@@ -1,0 +1,217 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+hps_dir="$repo_root/sw/hps-image"
+buildroot_output="${BUILDROOT_OUTPUT_DIR:-$hps_dir/output-full-stack}"
+reference_image="${SOCKIT_REFERENCE_IMAGE:-$repo_root/systemcd/SoCKit_SD_revD.img}"
+output_image=""
+sector_size=512
+
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") [--buildroot-output PATH] [--reference-image PATH] [--output-image PATH]
+
+Assemble the SoCKit hybrid full-stack SD image by preserving the Terasic raw
+boot partition and U-Boot chain from the reference image, while replacing:
+  - the FAT boot partition with the Buildroot-generated boot payload
+  - the Linux root filesystem with the Buildroot-generated rootfs
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --buildroot-output)
+            buildroot_output="$2"
+            shift 2
+            ;;
+        --reference-image)
+            reference_image="$2"
+            shift 2
+            ;;
+        --output-image)
+            output_image="$2"
+            shift 2
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            echo "Unknown argument: $1" >&2
+            usage >&2
+            exit 1
+            ;;
+    esac
+done
+
+images_dir="$buildroot_output/images"
+kernel_image="$images_dir/zImage"
+boot_vfat="$images_dir/boot.vfat"
+rootfs_image="$images_dir/rootfs.ext2"
+dtb_image="$images_dir/socfpga_cyclone5_sockit.dtb"
+dtb_vendor_name="$images_dir/socfpga.dtb"
+boot_script_source="$images_dir/boot.script"
+boot_script_image="$images_dir/u-boot.scr"
+
+if [[ -z "$output_image" ]]; then
+    output_image="$images_dir/sdcard-full-stack.img"
+fi
+
+required_files=(
+    "$kernel_image"
+    "$boot_vfat"
+    "$rootfs_image"
+    "$dtb_image"
+    "$dtb_vendor_name"
+    "$boot_script_source"
+    "$boot_script_image"
+)
+
+for path in "${required_files[@]}"; do
+    if [[ ! -f "$path" ]]; then
+        echo "Missing expected full-stack artifact: $path" >&2
+        echo "Run the Buildroot make step first." >&2
+        exit 1
+    fi
+done
+
+if [[ ! -f "$reference_image" ]]; then
+    echo "Missing reference image: $reference_image" >&2
+    exit 1
+fi
+
+mkdir -p "$(dirname "$output_image")"
+cp --reflink=auto "$reference_image" "$output_image"
+
+parted_output="$(parted -ms "$reference_image" unit s print)"
+
+get_partition_field() {
+    local partition="$1"
+    local field_index="$2"
+    local value
+
+    value="$(printf '%s\n' "$parted_output" | awk -F: -v partition="$partition" '$1 == partition { print $field }' field="$field_index")"
+
+    if [[ -z "$value" ]]; then
+        echo "Could not find partition $partition in $output_image" >&2
+        exit 1
+    fi
+
+    printf '%s\n' "${value%s}"
+}
+
+p1_start="$(get_partition_field 1 2)"
+p1_size="$(get_partition_field 1 4)"
+p2_start="$(get_partition_field 2 2)"
+p2_size="$(get_partition_field 2 4)"
+p3_start="$(get_partition_field 3 2)"
+p3_size="$(get_partition_field 3 4)"
+
+assert_aligned() {
+    local path="$1"
+    local size_bytes="$2"
+
+    if (( size_bytes % sector_size != 0 )); then
+        echo "Image size is not aligned to $sector_size-byte sectors: $path ($size_bytes bytes)" >&2
+        exit 1
+    fi
+}
+
+image_bytes="$(stat -c %s "$output_image")"
+kernel_bytes="$(stat -c %s "$kernel_image")"
+dtb_bytes="$(stat -c %s "$dtb_image")"
+dtb_vendor_bytes="$(stat -c %s "$dtb_vendor_name")"
+rootfs_bytes="$(stat -c %s "$rootfs_image")"
+boot_vfat_bytes="$(stat -c %s "$boot_vfat")"
+boot_script_source_bytes="$(stat -c %s "$boot_script_source")"
+boot_script_image_bytes="$(stat -c %s "$boot_script_image")"
+reference_image_bytes="$(stat -c %s "$reference_image")"
+
+assert_aligned "$boot_vfat" "$boot_vfat_bytes"
+assert_aligned "$rootfs_image" "$rootfs_bytes"
+
+boot_vfat_sectors=$((boot_vfat_bytes / sector_size))
+rootfs_sectors=$((rootfs_bytes / sector_size))
+
+if (( boot_vfat_sectors > p1_size )); then
+    echo "Boot FAT image is larger than partition 1 in the reference image." >&2
+    echo "  boot.vfat sectors: $boot_vfat_sectors" >&2
+    echo "  partition 1 sectors: $p1_size" >&2
+    exit 1
+fi
+
+if (( rootfs_sectors > p2_size )); then
+    echo "Rootfs image is larger than partition 2 in the reference image." >&2
+    echo "  rootfs sectors: $rootfs_sectors" >&2
+    echo "  partition 2 sectors: $p2_size" >&2
+    exit 1
+fi
+
+dd if="$boot_vfat" of="$output_image" bs="$sector_size" seek="$p1_start" conv=notrunc status=none
+dd if="$rootfs_image" of="$output_image" bs="$sector_size" seek="$p2_start" conv=notrunc status=none
+
+remaining_boot_sectors=$((p1_size - boot_vfat_sectors))
+if (( remaining_boot_sectors > 0 )); then
+    dd if=/dev/zero of="$output_image" bs="$sector_size" \
+        seek="$((p1_start + boot_vfat_sectors))" count="$remaining_boot_sectors" \
+        conv=notrunc status=none
+fi
+
+remaining_rootfs_sectors=$((p2_size - rootfs_sectors))
+if (( remaining_rootfs_sectors > 0 )); then
+    dd if=/dev/zero of="$output_image" bs="$sector_size" \
+        seek="$((p2_start + rootfs_sectors))" count="$remaining_rootfs_sectors" \
+        conv=notrunc status=none
+fi
+
+manifest_path="${output_image%.img}.manifest.txt"
+cat >"$manifest_path" <<EOF
+output_image=$output_image
+reference_image=$reference_image
+kernel_image=$kernel_image
+dtb_image=$dtb_image
+dtb_vendor_name=$dtb_vendor_name
+rootfs_image=$rootfs_image
+boot_vfat_image=$boot_vfat
+boot_script_source=$boot_script_source
+boot_script_image=$boot_script_image
+output_image_size_bytes=$image_bytes
+output_image_size_sectors=$((image_bytes / sector_size))
+reference_image_size_bytes=$reference_image_bytes
+reference_image_size_sectors=$((reference_image_bytes / sector_size))
+partition_1_start_sectors=$p1_start
+partition_1_size_sectors=$p1_size
+partition_2_start_sectors=$p2_start
+partition_2_size_sectors=$p2_size
+partition_3_start_sectors=$p3_start
+partition_3_size_sectors=$p3_size
+kernel_size_bytes=$kernel_bytes
+dtb_size_bytes=$dtb_bytes
+dtb_vendor_size_bytes=$dtb_vendor_bytes
+rootfs_size_bytes=$rootfs_bytes
+rootfs_size_sectors=$rootfs_sectors
+boot_vfat_size_bytes=$boot_vfat_bytes
+boot_vfat_size_sectors=$boot_vfat_sectors
+boot_script_source_size_bytes=$boot_script_source_bytes
+boot_script_image_size_bytes=$boot_script_image_bytes
+EOF
+
+cat <<MSG
+Assembled SoCKit hybrid full-stack SD image:
+  $output_image
+
+Generated artifacts:
+  preserved raw boot chain -> $reference_image (partition 3 / vendor U-Boot path)
+  boot partition   -> $boot_vfat
+  kernel           -> $kernel_image
+  dtb              -> $dtb_image
+  u-boot script    -> $boot_script_image
+  rootfs           -> $rootfs_image
+
+Manifest:
+  $manifest_path
+
+This image preserves the Terasic preloader/U-Boot path from the reference
+image and replaces only the FAT boot partition and Linux rootfs.
+MSG
