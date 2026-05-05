@@ -12,3 +12,26 @@
 # 30+ seconds of downtime per swap is unacceptable for a development
 # loop, so we enable the debugfs path.
 CONFIG_FPGA_MGR_DEBUG_FS=y
+
+# Netfilter + iptables — needed by /etc/init.d/S38ids_firewall to limit
+# the management ports to same-subnet traffic.  Without these the board's
+# sshd / dashboard / aggregator listen on 0.0.0.0 with no kernel-side
+# filter, which is fine in the air-gapped lab but unsafe on a shared
+# network.
+CONFIG_NETFILTER=y
+CONFIG_NETFILTER_ADVANCED=y
+CONFIG_NF_CONNTRACK=y
+CONFIG_NF_CONNTRACK_MARK=y
+CONFIG_NETFILTER_XTABLES=y
+CONFIG_NETFILTER_XT_MATCH_CONNTRACK=y
+CONFIG_NETFILTER_XT_MATCH_STATE=y
+CONFIG_NETFILTER_XT_MATCH_IPRANGE=y
+CONFIG_NETFILTER_XT_MATCH_MULTIPORT=y
+CONFIG_NETFILTER_XT_MATCH_TCPMSS=y
+CONFIG_NETFILTER_XT_TARGET_LOG=y
+CONFIG_NETFILTER_XT_TARGET_REJECT=y
+CONFIG_IP_NF_IPTABLES=y
+CONFIG_IP_NF_FILTER=y
+CONFIG_IP_NF_TARGET_REJECT=y
+CONFIG_IP_NF_MATCH_AH=n
+CONFIG_NF_DEFRAG_IPV4=y
