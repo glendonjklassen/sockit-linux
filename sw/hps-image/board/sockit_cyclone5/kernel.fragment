@@ -1,0 +1,14 @@
+# SoCKit kernel-config fragment.  Layered on top of the upstream
+# `socfpga_defconfig` by Buildroot (BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES).
+#
+# Add ONLY entries that flip a default that would otherwise force a
+# host-driven workaround.  Each entry should have a one-line "why" so
+# future-you can drop unused options when they no longer matter.
+
+# CONFIG_FPGA_MGR_DEBUG_FS exposes /sys/kernel/debug/fpga/<mgr>/firmware
+# (write firmware-name -> trigger fpga_mgr_load).  Without it, swapping
+# the FPGA bitstream from a running Linux requires either a device-tree
+# overlay through configfs (bigger setup) or a reboot through barebox.
+# 30+ seconds of downtime per swap is unacceptable for a development
+# loop, so we enable the debugfs path.
+CONFIG_FPGA_MGR_DEBUG_FS=y
