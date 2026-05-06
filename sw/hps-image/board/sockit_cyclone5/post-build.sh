@@ -10,8 +10,8 @@ if [[ -z "$target_dir" ]]; then
 fi
 
 # 1) Authorized SSH key.  SSH key is the ONLY way into a deployed board
-# — root password is locked (see BR2_TARGET_GENERIC_ROOT_PASSWD), so
-# without an authorized key you have to reflash the SD to recover.
+# — root password is locked below, so without an authorized key you have
+# to reflash the SD to recover.
 if [[ -n "$authorized_keys_file" ]]; then
     if [[ ! -f "$authorized_keys_file" ]]; then
         echo "post-build.sh: missing SOCKIT_AUTHORIZED_KEYS_FILE: $authorized_keys_file" >&2
@@ -22,7 +22,24 @@ if [[ -n "$authorized_keys_file" ]]; then
     echo "Installed root authorized_keys from: $authorized_keys_file"
 fi
 
-# 2) Hardened sshd_config — make the secure defaults explicit so a
+# 2) Lock root in /etc/shadow.  BR2_TARGET_GENERIC_ROOT_PASSWD takes
+# plaintext, so it can't be used to set the conventional locked marker
+# "!" — we'd just be setting "!" as the literal password.  Rewrite the
+# password field directly here, after buildroot has assembled shadow.
+shadow="$target_dir/etc/shadow"
+if [[ -f "$shadow" ]]; then
+    tmp="$(mktemp)"
+    awk -F: '
+        BEGIN { OFS=":" }
+        $1 == "root" { $2 = "!" }
+        { print }
+    ' "$shadow" > "$tmp"
+    install -m 600 "$tmp" "$shadow"
+    rm -f "$tmp"
+    echo "Locked root password in $shadow (no password can ever match)"
+fi
+
+# 3) Hardened sshd_config — make the secure defaults explicit so a
 # careless edit to the upstream config doesn't quietly weaken auth.
 sshd_config="$target_dir/etc/ssh/sshd_config"
 if [[ -f "$sshd_config" ]]; then
