@@ -22,21 +22,30 @@ if [[ -n "$authorized_keys_file" ]]; then
     echo "Installed root authorized_keys from: $authorized_keys_file"
 fi
 
-# 2) Lock root in /etc/shadow.  BR2_TARGET_GENERIC_ROOT_PASSWD takes
-# plaintext, so it can't be used to set the conventional locked marker
-# "!" — we'd just be setting "!" as the literal password.  Rewrite the
-# password field directly here, after buildroot has assembled shadow.
+# 2) Disable password login for root in /etc/shadow.  We want "no
+# password will ever match" — but NOT "account locked", because
+# OpenSSH built with UsePAM=no checks platform_locked_account() in
+# auth.c before consulting authorized_keys, and rejects the login
+# outright if the shadow password field starts with LOCKED_PASSWD_PREFIX
+# ("!" on Linux).  Pubkey auth never gets a chance.  This bit us hard
+# — see sockit-ids STATUS.md "SSH key on freshly-flashed cards" (2026-05).
+#
+# Use "*" instead.  Linux convention for "no password set"; OpenSSH's
+# Linux build has LOCKED_PASSWD_PREFIX="!" and LOCKED_PASSWD_STRING
+# undef, so "*" is NOT treated as locked and pubkey auth proceeds.
+# Verify against openssh's config.h before changing this — if a future
+# buildroot version defines LOCKED_PASSWD_STRING="*", this fix re-breaks.
 shadow="$target_dir/etc/shadow"
 if [[ -f "$shadow" ]]; then
     tmp="$(mktemp)"
     awk -F: '
         BEGIN { OFS=":" }
-        $1 == "root" { $2 = "!" }
+        $1 == "root" { $2 = "*" }
         { print }
     ' "$shadow" > "$tmp"
     install -m 600 "$tmp" "$shadow"
     rm -f "$tmp"
-    echo "Locked root password in $shadow (no password can ever match)"
+    echo "Disabled root password in $shadow (key-only login; not locked)"
 fi
 
 # 3) Hardened sshd_config — make the secure defaults explicit so a
