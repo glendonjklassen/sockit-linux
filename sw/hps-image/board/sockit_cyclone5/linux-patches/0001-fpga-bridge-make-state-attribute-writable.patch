@@ -1,0 +1,59 @@
+From: SoCKit-IDS project <ids@sockit.local>
+Subject: [PATCH] fpga: bridge: make state attribute writable
+
+Userspace needs to gate AXI traffic across the HPS<->FPGA bridge during
+runtime FPGA reconfiguration.  Without it, writing a new bitstream
+while a process holds an mmap of the LW bridge faults the HPS (the
+fabric is in reset for ~100 ms during write_init/write/write_complete,
+but the bridge is still "enabled" and any AXI transaction during that
+window panics the kernel).
+
+The fpga_bridge_enable() / fpga_bridge_disable() functions already
+exist; this just plumbs them through to a writable sysfs attribute.
+Same change landed upstream in later kernels; backporting onto
+rel_socfpga-5.11.
+
+Accepted values:
+    "enabled"   -> fpga_bridge_enable()
+    "disabled"  -> fpga_bridge_disable()
+    "1"         -> fpga_bridge_enable()
+    "0"         -> fpga_bridge_disable()
+Returns -EINVAL on anything else.
+
+Signed-off-by: SoCKit-IDS project <ids@sockit.local>
+---
+--- a/drivers/fpga/fpga-bridge.c
++++ b/drivers/fpga/fpga-bridge.c
+@@ -301,8 +301,31 @@
+ 	return scnprintf(buf, 10, "%s\n", enable ? "enabled" : "disabled");
+ }
+ 
++static ssize_t state_store(struct device *dev,
++			   struct device_attribute *attr,
++			   const char *buf, size_t count)
++{
++	struct fpga_bridge *bridge = to_fpga_bridge(dev);
++	bool enable;
++	int ret;
++
++	if (sysfs_streq(buf, "enabled") || sysfs_streq(buf, "1"))
++		enable = true;
++	else if (sysfs_streq(buf, "disabled") || sysfs_streq(buf, "0"))
++		enable = false;
++	else
++		return -EINVAL;
++
++	if (enable)
++		ret = fpga_bridge_enable(bridge);
++	else
++		ret = fpga_bridge_disable(bridge);
++
++	return ret ? ret : count;
++}
++
+ static DEVICE_ATTR_RO(name);
+-static DEVICE_ATTR_RO(state);
++static DEVICE_ATTR_RW(state);
+ 
+ static struct attribute *fpga_bridge_attrs[] = {
+ 	&dev_attr_name.attr,

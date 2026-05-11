@@ -1,0 +1,10 @@
+# Busybox config fragment.  Layered on top of the upstream busybox
+# defconfig by Buildroot.  Each entry gets a one-line "why".
+#
+# Enable busybox NTPD so the board can sync the wall clock at boot when
+# it has internet egress.  Without a synced clock, TLS certificate
+# validity-window checks (notBefore / notAfter) are bogus and log
+# timestamps drift.  ntpd is invoked once at boot via /etc/init.d/S40ntpd
+# and then periodically as a daemon.
+CONFIG_NTPD=y
+CONFIG_FEATURE_NTP_AUTH=y
