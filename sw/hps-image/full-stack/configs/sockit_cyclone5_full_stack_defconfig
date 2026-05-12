@@ -39,6 +39,17 @@ BR2_PACKAGE_NANO=y
 BR2_PACKAGE_IPROUTE2=y
 BR2_PACKAGE_ETHTOOL=y
 BR2_PACKAGE_IPTABLES=y
+# Suricata fallback engine — see docs/plans/suricata-fallback.md and
+# sockit-ids' sw/hps/init/S95suricata.  Bringing this in pulls a Rust
+# toolchain build (HOST_RUSTC) plus libpcap/libyaml/libhtp/jansson/pcre,
+# so a baseline rebuild from this point is multi-multi-minute the
+# first time.  Subsequent incremental rebuilds are fast.
+# rootfs growth is large (~50-100 MB).  Worth it: enables ~half of the
+# ET-Open import (rules with pcre/http_*/flow modifiers that the FPGA
+# byte matcher physically can't enforce).  The sockit-ids project
+# disables python3 on purpose; Suricata does NOT require python3 at
+# runtime, so this doesn't conflict with the picker-bake decision.
+BR2_PACKAGE_SURICATA=y
 BR2_TARGET_BAREBOX=y
 BR2_TARGET_BAREBOX_CUSTOM_VERSION=y
 BR2_TARGET_BAREBOX_CUSTOM_VERSION_VALUE="2021.07.0"

@@ -48,6 +48,14 @@ if [[ -f "$shadow" ]]; then
     echo "Disabled root password in $shadow (key-only login; not locked)"
 fi
 
+# 3a) Remove Buildroot's stock /etc/init.d/S99suricata.  The sockit-ids
+# project ships its own role-gated S95suricata that starts Suricata
+# only on matcher boards, with --af-packet, the project's rule file,
+# and EVE JSON output drained by ids_suricata_drain.  Letting both
+# init scripts run would have Suricata fight itself over the
+# AF_PACKET socket + PID file.
+rm -f "$target_dir/etc/init.d/S99suricata"
+
 # 3) Hardened sshd_config — make the secure defaults explicit so a
 # careless edit to the upstream config doesn't quietly weaken auth.
 sshd_config="$target_dir/etc/ssh/sshd_config"
