@@ -86,3 +86,31 @@ Subsystem sftp /usr/libexec/sftp-server
 SSHD_EOF
     echo "Installed hardened sshd_config (key-only, password auth disabled)"
 fi
+
+# Stable MAC address. The SoCKit's EMAC has no programmed address, so the kernel picks a
+# random one every boot and DHCP hands out a new IP each time. S02ethaddr generates one
+# locally administered unicast MAC on first boot, keeps it in /etc/ethaddr, and applies it
+# before networking (S40network) comes up. Delete /etc/ethaddr to get a new one.
+install -d "$target_dir/etc/init.d"
+cat > "$target_dir/etc/init.d/S02ethaddr" <<'ETHADDR_EOF'
+#!/bin/sh
+# Stable eth0 MAC: generated once (locally administered, unicast), kept in /etc/ethaddr.
+f=/etc/ethaddr
+case "$1" in
+start)
+    if [ ! -s "$f" ]; then
+        # /dev/urandom never blocks, even before the entropy pool is initialized.
+        set -- $(dd if=/dev/urandom bs=5 count=1 2>/dev/null | od -An -tx1)
+        printf '02:%s:%s:%s:%s:%s\n' "$1" "$2" "$3" "$4" "$5" > "$f"
+        sync
+    fi
+    mac=$(cat "$f")
+    ip link set dev eth0 down 2>/dev/null
+    if ip link set dev eth0 address "$mac"; then echo "eth0: MAC $mac"; else echo "eth0: could not set MAC $mac"; fi
+    ;;
+stop|restart|reload) ;;
+*) echo "usage: $0 start"; exit 1 ;;
+esac
+ETHADDR_EOF
+chmod 755 "$target_dir/etc/init.d/S02ethaddr"
+echo "Installed S02ethaddr (stable MAC in /etc/ethaddr)"
