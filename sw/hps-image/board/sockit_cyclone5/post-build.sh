@@ -105,6 +105,10 @@ start)
         sync
     fi
     mac=$(cat "$f")
+    # The interface can register a moment after rcS starts (sockit-ids' S30ids_mac_pin
+    # waited for it too); without it the kernel's random MAC would stick for this boot.
+    i=0
+    while [ ! -e /sys/class/net/eth0 ] && [ $i -lt 50 ]; do sleep 0.2; i=$((i + 1)); done
     ip link set dev eth0 down 2>/dev/null
     if ip link set dev eth0 address "$mac"; then echo "eth0: MAC $mac"; else echo "eth0: could not set MAC $mac"; fi
     ;;
