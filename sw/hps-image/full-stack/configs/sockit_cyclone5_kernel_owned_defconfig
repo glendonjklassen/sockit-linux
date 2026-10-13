@@ -39,5 +39,8 @@ BR2_PACKAGE_HOST_ENVIRONMENT_SETUP=y
 BR2_TARGET_ROOTFS_EXT2=y
 BR2_TARGET_ROOTFS_EXT2_4=y
 BR2_TARGET_ROOTFS_EXT2_SIZE="512M"
-BR2_TARGET_ROOTFS_EXT2_MKFS_OPTIONS="-O ^metadata_csum,^64bit"
+# ^orphan_file: e2fsprogs 1.47 enables it by default; a newer host kernel that mounts the card
+# sets orphan_present (RO_COMPAT), and if the card is pulled before a clean unmount the
+# board's 5.11 kernel (no orphan_file support) mounts root read-only: no sshd host keys.
+BR2_TARGET_ROOTFS_EXT2_MKFS_OPTIONS="-O ^metadata_csum,^64bit,^orphan_file"
 BR2_TARGET_ROOTFS_TAR=y
