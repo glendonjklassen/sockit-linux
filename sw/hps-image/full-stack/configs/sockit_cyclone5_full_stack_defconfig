@@ -33,6 +33,10 @@ BR2_PACKAGE_BINUTILS=y
 BR2_PACKAGE_BINUTILS_TARGET=y
 BR2_PACKAGE_OPENSSH=y
 BR2_PACKAGE_OPENSSH_SERVER=y
+# Entropy daemon. Kernel 5.11 on the Cyclone V has no hardware RNG, so on first boot
+# ssh-keygen (S50sshd) can block indefinitely on getrandom() waiting for the pool to
+# initialize, and sshd never starts. haveged (S21) fills the pool within seconds.
+BR2_PACKAGE_HAVEGED=y
 BR2_PACKAGE_RSYNC=y
 BR2_PACKAGE_LESS=y
 BR2_PACKAGE_NANO=y
